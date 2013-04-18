@@ -33,12 +33,14 @@ def main(config='harmopy.conf'):
     with open(args.config, 'r') as f:
         config.readfp(f)
 
-    rsyncs = rsync.RsyncManager([])
+    rsyncs = rsync.RsyncManager(
+        [config[section] for section in config.sections() if section != 'general'],
+        config['general']['history_length']
+    )
     server = status.StatusThread(args.debug, config, rsyncs)
     server.start()
 
     while True:
-        # check runtime
         rsyncs.tick()
         time.sleep(int(config['general']['check_sleep']))
 

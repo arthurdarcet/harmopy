@@ -18,6 +18,10 @@ class StatusPage(object):
         return json.dumps(self._rsyncs.status)
 
     @cherrypy.expose
+    def history(self):
+        return json.dumps(self._rsyncs.history)
+
+    @cherrypy.expose
     def config(self, **kwargs):
         return json.dumps(kwargs)
         return json.dumps(dict((k, dict(v)) for k,v in dict(self._config).items()))
