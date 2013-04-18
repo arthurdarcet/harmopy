@@ -2,14 +2,18 @@
 import argparse
 import configparser
 import logging
+import os
+import sys
 import time
 
-try:
-    from . import rsync
-    from . import status
-except SystemError:
-    import rsync
-    import status
+if __name__ == '__main__' and __package__ == '':
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    import harmopy
+    __package__ = 'harmopy'
+
+from . import logs
+from . import rsync
+from . import status
 
 
 def main(config='harmopy.conf'):
@@ -27,22 +31,24 @@ def main(config='harmopy.conf'):
     )
 
     args = parser.parse_args()
-    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     config = configparser.ConfigParser()
     with open(args.config, 'r') as f:
         config.readfp(f)
 
     rsyncs = rsync.RsyncManager(
-        [config[section] for section in config.sections() if section != 'general'],
-        config['general']['history_length']
+        [dict(config[section]) for section in config.sections() if section not in ('general', 'status')],
+        int(config['general']['history_length'])
     )
     server = status.StatusThread(args.debug, config, rsyncs)
-    server.start()
-
-    while True:
-        rsyncs.tick()
-        time.sleep(int(config['general']['check_sleep']))
+    logs.config('DEBUG' if args.debug else 'INFO')
+    try:
+        server.start()
+        while True:
+            rsyncs.tick()
+            time.sleep(int(config['general']['check_sleep']))
+    except KeyboardInterrupt:
+        server.stop()
 
 if __name__ == '__main__':
     main()
