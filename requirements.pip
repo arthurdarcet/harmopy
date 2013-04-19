@@ -1,2 +1,2 @@
-flask
+cherrypy>=3.2
 sh

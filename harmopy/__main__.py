@@ -4,6 +4,7 @@ import configparser
 import logging
 import os
 import sys
+import threading
 import time
 
 if __name__ == '__main__' and __package__ == '':
@@ -16,39 +17,46 @@ from . import rsync
 from . import status
 
 
+class Main(threading.Thread):
+    def __init__(self, config):
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            '-d', '--debug',
+            action='store_true',
+            help='Log debug messages',
+            default=False
+        )
+        parser.add_argument(
+            '-c', '--config',
+            help='Config file',
+            default=config,
+        )
+
+        args = parser.parse_args()
+
+        self.config = configparser.ConfigParser()
+        with open(args.config, 'r') as f:
+            self.config.readfp(f)
+
+        self.rsyncs = rsync.RsyncManager(
+            [dict(self.config[section]) for section in self.config.sections()
+            	if section not in ('general', 'status')],
+            int(self.config['general']['history_length'])
+        )
+        self.server = status.StatusThread(args.debug, self.config, self.rsyncs)
+        logs.config('DEBUG' if args.debug else 'INFO')
+
+    def run(self):
+        try:
+            self.server.start()
+            while True:
+                self.rsyncs.tick()
+                time.sleep(int(self.config['general']['check_sleep']))
+        except KeyboardInterrupt:
+            self.server.stop()
+
 def main(config='harmopy.conf'):
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-d', '--debug',
-        action='store_true',
-        help='Log debug messages',
-        default=False
-    )
-    parser.add_argument(
-        '-c', '--config',
-        help='Config file',
-        default=config,
-    )
-
-    args = parser.parse_args()
-
-    config = configparser.ConfigParser()
-    with open(args.config, 'r') as f:
-        config.readfp(f)
-
-    rsyncs = rsync.RsyncManager(
-        [dict(config[section]) for section in config.sections() if section not in ('general', 'status')],
-        int(config['general']['history_length'])
-    )
-    server = status.StatusThread(args.debug, config, rsyncs)
-    logs.config('DEBUG' if args.debug else 'INFO')
-    try:
-        server.start()
-        while True:
-            rsyncs.tick()
-            time.sleep(int(config['general']['check_sleep']))
-    except KeyboardInterrupt:
-        server.stop()
+    Main(config).run()
 
 if __name__ == '__main__':
     main()
