@@ -7,7 +7,7 @@ import sh
 logger = logging.getLogger(__name__)
 
 class Rsync(object):
-    def __init__(self, source, dest, rsync_args='', user=None):
+    def __init__(self, source, dest, rsync_args='', user=None, **_):
         self.running = False
         self.args = (rsync_args, source, dest)
         self.user = user
@@ -35,9 +35,11 @@ class Rsync(object):
     @property
     def status(self):
         return {
-            'speed': 42,
-            'file': 'blah',
-            'done': '42%',
+            'source': self.args[1],
+            'destination': self.args[2],
+            'speed': '442Ko/s',
+            'done': 42,
+            'eta': 2,
         }
 
     def __str__(self):
@@ -46,7 +48,8 @@ class Rsync(object):
 
 class RsyncManager(object):
     def __init__(self, targets, history_length):
-        self.targets = itertools.cycle(targets)
+        self.files = [dict(target, id=i, last_synced=None) for i, target in enumerate(targets)]
+        self.targets = itertools.cycle(self.files)
         self.history_length = history_length
         self.history = []
         self.current = None
@@ -54,10 +57,10 @@ class RsyncManager(object):
     def prepare(self):
         target = next(self.targets)
         try:
-            self.max_runtime = int(target.pop('max_runtime', 'None'))
+            self.max_runtime = int(target.get('max_runtime', 'None'))
         except ValueError:
             self.max_runtime = None
-        self.should_run = eval(target.pop('should_run', 'None')) or (lambda *_: True)
+        self.should_run = eval(target.get('should_run', 'None')) or (lambda *_: True)
         self.current = Rsync(**target)
         logger.debug('Prepared job %s', self.current)
 

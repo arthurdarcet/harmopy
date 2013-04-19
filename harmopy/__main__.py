@@ -37,10 +37,11 @@ class Main(threading.Thread):
         self.config = configparser.ConfigParser()
         with open(args.config, 'r') as f:
             self.config.readfp(f)
+        self.config.main_sections = ('general', 'status')
 
         self.rsyncs = rsync.RsyncManager(
             [dict(self.config[section]) for section in self.config.sections()
-            	if section not in ('general', 'status')],
+            	if section not in self.config.main_sections],
             int(self.config['general']['history_length'])
         )
         self.server = status.StatusThread(args.debug, self.config, self.rsyncs)

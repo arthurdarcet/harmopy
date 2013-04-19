@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Harmopy</title>
+        <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="static/index.css">
+    </head>
+    <body>
+        <div class="container">
+            <div class="row">
+                <ul class="thumbnails">
+                    <li class="span4">
+                        <div class="thumbnail"><div class="caption" id="status">
+                            <h4>Status</h4>
+                            <div class="loading">
+                                <i class="icon-spinner icon-spin icon-4x"></i>
+                            </div>
+                            <script id="status-template" type="text/x-handlebars-template">
+                            {{#if running}}
+                            <p><i class="icon-file icon"></i>{{source}}<i class="icon-angle-right"></i>{{destination}}</p>
+                            <p><i class="icon-download-alt icon"></i>{{speed}}</p>
+                            <p><i class="icon-time icon"></i>ETA: {{eta}}</p>
+                            <div class="progress progress-striped">
+                                <div class="bar" style="width: {{done}}%;"></div>
+                            </div>
+                            {{else}}
+                            <p><i class="icon-exchange icon"></i><span class="label-important label">Not running</span></p>
+                            {{/if}}
+                            </script>
+                            <div class="data"></div>
+                        </div></div>
+                    </li>
+                    <li class="span8">
+                        <div class="thumbnail"><div class="caption" id="history">
+                            <h4>History</h4>
+                            <div class="loading">
+                                <i class="icon-spinner icon-spin icon-4x"></i>
+                            </div>
+                            <script id="history-template" type="text/x-handlebars-template">
+                            TODO
+                            </script>
+                            <div class="data"></div>
+                        </div></div>
+                    </li>
+                </ul>
+            </div>
+            <div class="row">
+                <ul class="thumbnails">
+                    <li class="span6">
+                        <div class="thumbnail"><div class="caption" id="config" >
+                            <h4>Configuration</h4>
+                            <div class="loading">
+                                <i class="icon-spinner icon-spin icon-4x"></i>
+                            </div>
+                            <div class="form-horizontal">
+                                <script id="config-template" type="text/x-handlebars-template">
+                                <fieldset>
+                                    <legend>{{title}}</legend>
+                                    {{#each items}}
+                                    <div class="control-group">
+                                        <label class="control-label" for="{{this.id}}">{{this.title}}</label>
+                                        <div class="controls">
+                                            <input type="text" name="{{this.id}}" data-loading-text="<i class='icon-spinner icon-spin'></i>" placeholder="{{this.value}}" {{#unless editable}}class="uneditable-input"{{/unless}}>
+                                            <span class="help-block">{{this.help}}</span>
+                                        </div>
+                                    </div>
+                                    {{/each}}
+                                </fieldset>
+                                </script>
+                                <div class="data"></div>
+                                <div class="control-group hidden showondata">
+                                    <div class="controls">
+                                        <button type="submit" class="btn">Save</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div></div>
+                    </li>
+                    <li class="span6">
+                        <div class="thumbnail"><div class="caption" id="files">
+                            <h4>Files</h4>
+                            <div class="loading">
+                                <i class="icon-spinner icon-spin icon-4x"></i>
+                            </div>
+                            <table class="hidden showondata table table-striped table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>Run as</th>
+                                        <th>rsync</th>
+                                        <th>Source</th>
+                                        <th>Destination</th>
+                                        <th>Run hours</th>
+                                        <th>Priority</th>
+                                        <th>Last synced</th>
+                                    </tr>
+                                </thead>
+                                <script id="files-template" type="text/x-handlebars-template">
+                                <tr>
+                                    <td class="file-config-user">
+                                        {{#if user}}
+                                        <span class="muted">sudo -u</span>
+                                        {{user}}
+                                        {{/if}}
+                                    </td>
+                                    <td class="file-config-rsync_args">
+                                        <span class="muted">rsync</span>
+                                        {{rsync_args}}
+                                    </td>
+                                    <td class="file-config-source">
+                                        {{source}}
+                                    </td>
+                                    <td class="file-config-dest">
+                                        {{dest}}
+                                    </td>
+                                    <td class="file-config-max_runtime">
+                                        {{max_runtime}}
+                                    </td>
+                                    <td class="file-config-last_synced">
+                                        {{last_synced}}
+                                    </td>
+                                </tr>
+                                </script>
+                                <tbody class="data"></tbody>
+                            </table>
+                        </div></div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0-rc.3/handlebars.min.js"></script>
+        <script type="text/javascript" src="static/index.js"></script>
+    </body>
+</html>

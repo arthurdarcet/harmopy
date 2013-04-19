@@ -1,6 +1,8 @@
 import cherrypy
+import datetime
 import functools
 import json
+import os.path
 import threading
 
 from . import logs
@@ -12,12 +14,19 @@ servers.wait_for_occupied_port = fake_wait_for_occupied_port
 
 
 cherrypy.log.access_log_format = '{h} "{r}" {s}'
+
+class JSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime('%Y-%m-%d %H:%M')
+        return json.JSONEncoder.default(self, obj)
+
 def json_exposed(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
         value = func(*args, **kw)
-        cherrypy.response.headers["Content-Type"] = "application/json"
-        return json.dumps(value).encode('utf8')
+        cherrypy.response.headers['Content-Type'] = 'application/json'
+        return json.dumps(value, cls=JSONEncoder).encode('utf8')
     wrapper.exposed = True
     return wrapper
 
@@ -40,11 +49,35 @@ class StatusPage(object):
 
     @json_exposed
     def config(self, **kwargs):
-        return dict((k, dict(v)) for k,v in dict(self._config).items())
+        return [{
+            'title': section,
+            'items': [{
+                'title': k,
+                'id': k,
+                'value': v,
+                'editable': self._config['status']['allow_conf_edit'] == 'True',
+            } for k, v in values.items()
+            if k not in self._config['DEFAULT'].keys()],
+        } for section, values in self._config.items()
+        if section in self._config.main_sections]
 
+    @json_exposed
+    def files(self):
+        return self._rsyncs.files
 
 
 class StatusThread(threading.Thread):
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+    config = {
+        '/static': {
+            'tools.staticdir.on': True,
+            'tools.staticdir.dir': static_dir,
+        },
+        '/index': {
+            'tools.staticfile.on': True,
+            'tools.staticfile.filename': os.path.join(static_dir, 'index.html'),
+        },
+    }
     def __init__(self, debug, config, rsyncs, *args, **kwargs):
         super(StatusThread, self).__init__(*args, **kwargs)
         cherrypy.config.update({
@@ -55,7 +88,7 @@ class StatusThread(threading.Thread):
         self.daemon = True
 
     def run(self):
-        app = cherrypy.tree.mount(self.page, config={'/':{}})
+        app = cherrypy.tree.mount(self.page, config=self.config)
         app.log.access_log_format = '{h} "{r}" {s}'
         cherrypy.engine.start()
 
