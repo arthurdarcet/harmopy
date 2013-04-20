@@ -59,6 +59,23 @@ class Tests(unittest.TestCase):
                 self.assertEqual(res[k][kk], vv)
         self.assertTrue(res['dir2']['should_run'](0,1,2))
 
+    def test_config_setter(self):
+        self.main.config['dir2']['should_run'] = 'lambda x,y,z: x*z'
+        self.assertEqual(self.main.config['dir2']['should_run'](3,1,2), 6)
+        for v,w in [
+            (None, None),
+            ('null', None),
+            (1, 1),
+            ('true', True),
+            (True, True),
+            ('false', False),
+            ('False', False),
+            (False, False),
+            ('  ', None),
+        ]:
+            self.main.config['dir2']['rsync_args'] = v
+            self.assertEqual(self.main.config['dir2']['rsync_args'], w)
+
 
 if __name__ == '__main__':
     unittest.main()
