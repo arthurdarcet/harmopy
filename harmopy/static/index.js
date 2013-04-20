@@ -32,11 +32,6 @@ on_file_load = function(data) {
     }
 
     $('#edit-defaults').removeClass('hidden');
-    $('.confirm-file-delete').click(function() {
-        $('#modal #confirmed-delete').data('id', $(this).data('id'));
-        $(this).button('loading');
-        $('#modal').modal('show');
-    });
     $('.do-file-edit').click(function() {
         var data = store.files[$(this).data('id')];
         var html = templates.file_edit(data);
@@ -44,6 +39,13 @@ on_file_load = function(data) {
         $('#file-edit').hide();
         $('#file-edit').removeClass('hidden');
         $('#file-edit').fadeIn();
+    });
+    $('.confirm').click(function() {
+        $(this).button('loading');
+        $('#modal #confirmed').data('id', $(this).data('id'));
+        $('#modal #confirmed').data('action', $(this).data('action'));
+        $('#modal #modal-message').html($(this).data('confirm-message'));
+        $('#modal').modal('show');
     });
 };
 
@@ -75,26 +77,33 @@ $(document).ready(function() {
     $('.alert .close').click(function(){
         $('.alert').fadeOut();
     });
-    $('#confirmed-delete').click(function(){
+    $('#confirmed').click(function(){
         $('#modal').modal('hide');
-        $('#file-' + $(this).data('id') + ' .confirm-file-delete').button('loading');
-        $.get('/delete/' + $(this).data('id'), function(data) {
-            $('.confirm-file-delete').button('reset');
+        var action = $(this).data('action');
+        $('#file-' + $(this).data('id') + ' .file-' + action).button('loading');
+        $.get('/' + action + '/' + $(this).data('id'), function(data) {
+            $('.confirm').button('reset');
             if (data.status != 200) {
                 $('.alert #error-msg').html(data.error);
                 $('.alert').hide();
                 $('.alert').removeClass('hidden');
                 $('.alert').fadeIn();
             } else {
-                $('#file-' + data.id).fadeOut();
+                if(action == 'delete')
+                    $('#file-' + data.id).fadeOut();
+                else if(action == 'expand'){
+                    $.each(data.files, function(i, file) {
+                        $(templates.files(file)).insertAfter('tr#file-' + data.id)
+                    });
+                }
             }
         })
     });
     $('#modal').on('hide', function(){
-        $('.confirm-file-delete').button('reset');
+        $('.confirm').button('reset');
+        $('.confirm').button('reset');
     });
     $('#modal').on('show', function(){
-        $('#modal').modal({backdrop: true});
         $('#modal').removeClass('hidden');
     });
 });

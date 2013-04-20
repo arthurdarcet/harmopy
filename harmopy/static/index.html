@@ -139,7 +139,12 @@
                                     <td>
                                         {{#if editable}}
                                         <a href="#file-edit" class="do-file-edit" data-id="{{id}}"><i class="icon-edit"></i></a>
-                                        <a href="#" class="confirm-file-delete" data-id="{{id}}" data-loading-text="<i class='icon-spinner icon-spin'></i>"><i class="icon-remove"></i></a>
+                                        <a href="#" class="confirm file-delete" data-id="{{id}}" data-action="delete" data-confirm-message="You are about to delete one file config, this procedure is irreversible." data-loading-text="<i class='icon-spinner icon-spin'></i>">
+                                            <i class="icon-remove"></i>
+                                        </a>
+                                        <a href="#" class="confirm expand-file" data-id="{{id}}" data-action="expand" data-confirm-message="You are about to replace a config file by its remote children." data-loading-text="<i class='icon-spinner icon-spin'></i>">
+                                            <i class="icon-plus"></i>
+                                        </a>
                                         {{/if}}
                                     </td>
                                 </tr>
@@ -192,15 +197,15 @@
         <div id="modal" class="modal hidden fade">
             <div class="modal-header">
                 <a href="javascript:$('#modal').modal('hide')" class="close">&times;</a>
-                <h3>Delete file</h3>
+                <h3>Are you sure</h3>
             </div>
             <div class="modal-body">
-                <p>You are about to delete one file config, this procedure is irreversible.</p>
+                <p id="modal-message"></p>
                 <p>Do you want to proceed?</p>
                 <p id="debug-url"></p>
             </div>
             <div class="modal-footer">
-                <a class="btn btn-danger" id="confirmed-delete">Yes</a>
+                <a class="btn btn-danger" id="confirmed">Yes</a>
                 <a href="javascript:$('#modal').modal('hide')" class="btn btn-secondary">No</a>
             </div>
         </div>

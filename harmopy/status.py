@@ -24,7 +24,10 @@ class JSONEncoder(json.JSONEncoder):
 def json_exposed(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
-        value = func(*args, **kw)
+        try:
+            value = func(*args, **kw)
+        except Exception as e:
+            value = {'status': 500, 'error': str(e)}
         cherrypy.response.headers['Content-Type'] = 'application/json'
         return json.dumps(value, cls=JSONEncoder).encode('utf8')
     wrapper.exposed = True
@@ -75,6 +78,14 @@ class StatusPage(object):
         return {
             'status': 200,
             'id': file_id,
+        }
+
+    @json_exposed
+    def expand(self, file_id):
+        return {
+            'status': 200,
+            'id': file_id,
+            'files': [self._rsyncs[file_id]],
         }
 
 

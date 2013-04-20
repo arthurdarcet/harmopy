@@ -94,6 +94,12 @@ class RsyncManager(object):
             return {'running': False}
         return dict(self.current.status, running=True)
 
+    def __getitem__(self, file_id):
+        for target in self.files:
+            if target['id'] == file_id:
+                return target
+        raise KeyError('No such file_id')
+
     def _ran_too_long(self):
         return self.max_runtime is not None and (datetime.now() - self.start_time).total_seconds() >= self.max_runtime
 
