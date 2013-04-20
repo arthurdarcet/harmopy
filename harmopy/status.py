@@ -64,7 +64,7 @@ class StatusPage(object):
     @json_exposed
     def files(self):
         return [dict(section.items(text_lambda=True), id=title, editable=self._config['status']['allow_conf_edit'])
-            for title, section in self._config.files]
+            for title, section in self._config.files + [('DEFAULT', self._config['DEFAULT'])]]
 
     @json_exposed
     def delete(self, file_id):
