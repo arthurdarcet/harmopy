@@ -43,7 +43,7 @@ class Rsync(object):
         }
 
     def __str__(self):
-        return '<({})Rsync {} {} -> {}>'.format(self.user, *self.args)
+        return '<(su {}) Rsync {} {} -> {}>'.format(self.user, *self.args)
 
 
 class RsyncManager(object):
@@ -56,11 +56,8 @@ class RsyncManager(object):
 
     def prepare(self):
         target = next(self.targets)
-        try:
-            self.max_runtime = int(target.get('max_runtime', 'None'))
-        except ValueError:
-            self.max_runtime = None
-        self.should_run = eval(target.get('should_run', 'None')) or (lambda *_: True)
+        self.max_runtime = target.get('max_runtime', None)
+        self.should_run = target.get('should_run', lambda *_: True)
         self.current = Rsync(**target)
         logger.debug('Prepared job %s', self.current)
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import configparser
 import logging
 import os
 import sys
@@ -12,13 +11,14 @@ if __name__ == '__main__' and __package__ == '':
     import harmopy
     __package__ = 'harmopy'
 
+from . import config
 from . import logs
 from . import rsync
 from . import status
 
 
 class Main(threading.Thread):
-    def __init__(self, config):
+    def __init__(self, configfile):
         parser = argparse.ArgumentParser()
         parser.add_argument(
             '-d', '--debug',
@@ -34,15 +34,11 @@ class Main(threading.Thread):
 
         args = parser.parse_args()
 
-        self.config = configparser.ConfigParser()
-        with open(args.config, 'r') as f:
-            self.config.readfp(f)
-        self.config.main_sections = ('general', 'status')
+        self.config = config.Config(configfile)
 
         self.rsyncs = rsync.RsyncManager(
-            [dict(self.config[section]) for section in self.config.sections()
-            	if section not in self.config.main_sections],
-            int(self.config['general']['history_length'])
+            self.config.files,
+            self.config['general']['history_length']
         )
         self.server = status.StatusThread(args.debug, self.config, self.rsyncs)
         logs.config('DEBUG' if args.debug else 'INFO')
@@ -52,7 +48,7 @@ class Main(threading.Thread):
             self.server.start()
             while True:
                 self.rsyncs.tick()
-                time.sleep(int(self.config['general']['check_sleep']))
+                time.sleep(self.config['general']['check_sleep'])
         except KeyboardInterrupt:
             self.server.stop()
 

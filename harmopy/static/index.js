@@ -3,9 +3,7 @@ load = function(url, id) {
     var template = Handlebars.compile($(id + '-template').html());
     $.get(url, function(data){
         $.each([].concat(data), function(i, elem) {
-            console.log(elem);
             var html = template(elem);
-            console.log(html);
             $(id + ' .loading').hide();
             $(id + ' .data').append(html);
             $(id + ' .showondata').removeClass('hidden');

@@ -50,20 +50,18 @@ class StatusPage(object):
     @json_exposed
     def config(self, **kwargs):
         return [{
-            'title': section,
+            'title': title,
             'items': [{
                 'title': k,
                 'id': k,
                 'value': v,
                 'editable': self._config['status']['allow_conf_edit'] == 'True',
-            } for k, v in values.items()
-            if k not in self._config['DEFAULT'].keys()],
-        } for section, values in self._config.items()
-        if section in self._config.main_sections]
+            } for k, v in section.items(text_lambda=True)],
+        } for title, section in self._config.main_sections]
 
     @json_exposed
     def files(self):
-        return self._rsyncs.files
+        return [dict(section.items(text_lambda=True)) for section in self._config.files]
 
 
 class StatusThread(threading.Thread):
@@ -78,8 +76,8 @@ class StatusThread(threading.Thread):
             'tools.staticfile.filename': os.path.join(static_dir, 'index.html'),
         },
     }
-    def __init__(self, debug, config, rsyncs, *args, **kwargs):
-        super(StatusThread, self).__init__(*args, **kwargs)
+    def __init__(self, debug, config, rsyncs):
+        super().__init__()
         cherrypy.config.update({
             'server.socket_host': config['status']['host'],
             'server.socket_port': int(config['status']['port']),
