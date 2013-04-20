@@ -19,6 +19,7 @@ from . import status
 
 class Main(threading.Thread):
     def __init__(self, configfile):
+        super().__init__()
         parser = argparse.ArgumentParser()
         parser.add_argument(
             '-d', '--debug',

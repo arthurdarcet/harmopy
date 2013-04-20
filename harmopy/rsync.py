@@ -48,7 +48,7 @@ class Rsync(object):
 
 class RsyncManager(object):
     def __init__(self, targets, history_length):
-        self.files = [dict(target, id=i, last_synced=None) for i, target in enumerate(targets)]
+        self.files = [dict(target, id=i, last_synced=None) for i, target in targets]
         self.targets = itertools.cycle(self.files)
         self.history_length = history_length
         self.history = []
