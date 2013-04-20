@@ -30,6 +30,7 @@ def json_exposed(func):
     wrapper.exposed = True
     return wrapper
 
+
 class StatusPage(object):
     def __init__(self, rsyncs, config):
         self._rsyncs = rsyncs
@@ -37,11 +38,11 @@ class StatusPage(object):
 
     @json_exposed
     def status(self):
-        return self._rsyncs.status
+        return dict(id='status', **self._rsyncs.status)
 
     @json_exposed
     def history(self):
-        return self._rsyncs.history
+        return [dict(h, id=h['time']) for h in self._rsyncs.history]
 
     @json_exposed
     def logs(self):
@@ -50,18 +51,31 @@ class StatusPage(object):
     @json_exposed
     def config(self, **kwargs):
         return [{
-            'title': title,
+            'title': title.replace('_', ' ').capitalize(),
+            'id': title,
             'items': [{
-                'title': k,
+                'title': k.replace('_', ' ').capitalize(),
                 'id': k,
                 'value': v,
-                'editable': self._config['status']['allow_conf_edit'] == 'True',
+                'editable': self._config['status']['allow_conf_edit'],
             } for k, v in section.items(text_lambda=True)],
         } for title, section in self._config.main_sections]
 
     @json_exposed
     def files(self):
-        return [dict(section.items(text_lambda=True)) for section in self._config.files]
+        return [dict(section.items(text_lambda=True), id=title, editable=self._config['status']['allow_conf_edit'])
+            for title, section in self._config.files]
+
+    @json_exposed
+    def delete(self, file_id):
+        return {
+            'status': 403,
+            'error': 'Config edit not allowed',
+        }
+        return {
+            'status': 200,
+            'id': file_id,
+        }
 
 
 class StatusThread(threading.Thread):

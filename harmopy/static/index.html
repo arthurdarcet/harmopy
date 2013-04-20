@@ -47,21 +47,21 @@
             </div>
             <div class="row">
                 <ul class="thumbnails">
-                    <li class="span6">
+                    <li class="span3">
                         <div class="thumbnail"><div class="caption" id="config" >
                             <h4>Configuration</h4>
                             <div class="loading">
                                 <i class="icon-spinner icon-spin icon-4x"></i>
                             </div>
-                            <div class="form-horizontal">
+                            <form class="form-horizontal">
                                 <script id="config-template" type="text/x-handlebars-template">
-                                <fieldset>
+                                <fieldset id="config-{{id}}">
                                     <legend>{{title}}</legend>
                                     {{#each items}}
                                     <div class="control-group">
                                         <label class="control-label" for="{{this.id}}">{{this.title}}</label>
                                         <div class="controls">
-                                            <input type="text" name="{{this.id}}" data-loading-text="<i class='icon-spinner icon-spin'></i>" placeholder="{{this.value}}" {{#unless editable}}class="uneditable-input"{{/unless}}>
+                                            <input type="text" name="{{this.id}}" placeholder="{{this.value}}" {{#unless editable}}disabled{{/unless}}>
                                             <span class="help-block">{{this.help}}</span>
                                         </div>
                                     </div>
@@ -71,13 +71,19 @@
                                 <div class="data"></div>
                                 <div class="control-group hidden showondata">
                                     <div class="controls">
-                                        <button type="submit" class="btn">Save</button>
+                                        <button type="submit" class="btn" data-loading-text="<i class='icon-spinner icon-spin'></i>">Save</button>
                                     </div>
                                 </div>
-                            </div>
+                            </form>
                         </div></div>
                     </li>
-                    <li class="span6">
+                    <div class="span9">
+                        <div class="alert alert-error hidden">
+                            <button type="button" class="close">&times;</button>
+                            <strong>Error!</strong> <span id="error-msg"></span>
+                        </div>
+                    </div>
+                    <li class="span9">
                         <div class="thumbnail"><div class="caption" id="files">
                             <h4>Files</h4>
                             <div class="loading">
@@ -86,41 +92,44 @@
                             <table class="hidden showondata table table-striped table-condensed">
                                 <thead>
                                     <tr>
-                                        <th>Run as</th>
-                                        <th>rsync</th>
+                                        <th colspan="2">Rsync</th>
                                         <th>Source</th>
                                         <th>Destination</th>
                                         <th>Run hours</th>
                                         <th>Priority</th>
                                         <th>Last synced</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <script id="files-template" type="text/x-handlebars-template">
-                                <tr>
-                                    <td class="file-config-user">
+                                <tr id="file-{{id}}">
+                                    <td>
                                         {{#if user}}
-                                        <span class="muted">sudo -u</span>
-                                        {{user}}
+                                        <span class="muted">su</span> {{user}} <span class="muted">-c</span>
                                         {{/if}}
                                     </td>
-                                    <td class="file-config-rsync_args">
+                                    <td>
                                         <span class="muted">rsync</span>
                                         {{rsync_args}}
                                     </td>
-                                    <td class="file-config-source">
+                                    <td>
                                         {{source}}
                                     </td>
-                                    <td class="file-config-dest">
+                                    <td>
                                         {{dest}}
                                     </td>
-                                    <td class="file-config-should_run">
-                                        {{should_run}}
+                                    <td>
+                                        <small>{{should_run}}</small>
                                     </td>
-                                    <td class="file-config-max_runtime">
+                                    <td>
                                         {{max_runtime}}
                                     </td>
-                                    <td class="file-config-last_synced">
+                                    <td>
                                         {{last_synced}}
+                                    </td>
+                                    <td>
+                                        <a href="#file-edit" class="do-file-edit" data-id="{{id}}"><i class="icon-edit"></i></a>
+                                        <a href="#" class="confirm-file-delete" data-id="{{id}}" data-loading-text="<i class='icon-spinner icon-spin'></i>"><i class="icon-remove"></i></a>
                                     </td>
                                 </tr>
                                 </script>
@@ -128,7 +137,49 @@
                             </table>
                         </div></div>
                     </li>
+                    <li class="span9 hidden" id="file-edit">
+                        <div class="thumbnail"><div class="caption">
+                            <h4>File edit</h4>
+                            <script id="file-config-template" type="text/x-handlebars-template">
+                            <form class="form-horizontal">
+                                {{#each items}}
+                                <div class="control-group">
+                                    <label class="control-label" for="{{this.id}}">{{this.title}}</label>
+                                    <div class="controls">
+                                        <input type="text" name="{{this.id}}" placeholder="{{this.value}}" {{#unless editable}}disabled{{/unless}}>
+                                        <span class="help-block">{{this.help}}</span>
+                                    </div>
+                                </div>
+                                {{/each}}
+                            </form>
+                            </script>
+                            <div class="data"></div>
+                            <div class="control-group hidden showondata">
+                                <div class="controls">
+                                    <button type="submit" class="btn" data-loading-text="<i class='icon-spinner icon-spin'></i>">Save</button>
+                                </div>
+                            </div>
+                        </div></div>
+                    </li>
+
                 </ul>
+            </div>
+            <div class="row">
+        </div>
+
+        <div id="modal" class="modal hidden fade">
+            <div class="modal-header">
+                <a href="javascript:$('#modal').modal('hide')" class="close">&times;</a>
+                <h3>Delete file</h3>
+            </div>
+            <div class="modal-body">
+                <p>You are about to delete one file config, this procedure is irreversible.</p>
+                <p>Do you want to proceed?</p>
+                <p id="debug-url"></p>
+            </div>
+            <div class="modal-footer">
+                <a class="btn btn-danger" id="confirmed-delete">Yes</a>
+                <a href="javascript:$('#modal').modal('hide')" class="btn btn-secondary">No</a>
             </div>
         </div>
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>

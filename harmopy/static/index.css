@@ -7,3 +7,19 @@ body {
 .icon {
     margin-right: 5px;
 }
+.form-horizontal .control-label {
+    width: 100px;
+}
+.form-horizontal .controls {
+    margin-left: 110px;
+}
+.form-horizontal .controls input {
+    width: 120px;
+}
+
+a:hover {
+    text-decoration: none;
+}
+#files {
+    font-size: small;
+}
