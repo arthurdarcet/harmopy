@@ -7,13 +7,13 @@ body {
 .icon {
     margin-right: 5px;
 }
-.form-horizontal .control-label {
+#config .form-horizontal .control-label {
     width: 100px;
 }
-.form-horizontal .controls {
+#config .form-horizontal .controls {
     margin-left: 110px;
 }
-.form-horizontal .controls input {
+#config .form-horizontal .controls input {
     width: 120px;
 }
 

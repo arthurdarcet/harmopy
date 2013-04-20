@@ -128,8 +128,10 @@
                                         {{last_synced}}
                                     </td>
                                     <td>
+                                        {{#if editable}}
                                         <a href="#file-edit" class="do-file-edit" data-id="{{id}}"><i class="icon-edit"></i></a>
                                         <a href="#" class="confirm-file-delete" data-id="{{id}}" data-loading-text="<i class='icon-spinner icon-spin'></i>"><i class="icon-remove"></i></a>
+                                        {{/if}}
                                     </td>
                                 </tr>
                                 </script>
@@ -140,17 +142,49 @@
                     <li class="span9 hidden" id="file-edit">
                         <div class="thumbnail"><div class="caption">
                             <h4>File edit</h4>
-                            <script id="file-config-template" type="text/x-handlebars-template">
+                            <script id="file_edit-template" type="text/x-handlebars-template">
                             <form class="form-horizontal">
-                                {{#each items}}
                                 <div class="control-group">
-                                    <label class="control-label" for="{{this.id}}">{{this.title}}</label>
+                                    <label class="control-label" for="user">Run as</label>
                                     <div class="controls">
-                                        <input type="text" name="{{this.id}}" placeholder="{{this.value}}" {{#unless editable}}disabled{{/unless}}>
-                                        <span class="help-block">{{this.help}}</span>
+                                        <input type="text" name="user" placeholder="{{user}}">
                                     </div>
                                 </div>
-                                {{/each}}
+                                <div class="control-group">
+                                    <label class="control-label" for="rsync_args">Rsync args</label>
+                                    <div class="controls">
+                                        <input type="text" name="rsync_args" placeholder="{{rsync_args}}">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="source">Source</label>
+                                    <div class="controls">
+                                        <input type="text" name="source" placeholder="{{source}}">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="dest">Destination</label>
+                                    <div class="controls">
+                                        <input type="text" name="dest" placeholder="{{dest}}">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="should_run">Run times</label>
+                                    <div class="controls">
+                                        <input type="text" name="should_run" placeholder="{{should_run}}">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <label class="control-label" for="max_runtime">Priority</label>
+                                    <div class="controls">
+                                        <input type="text" name="max_runtime" placeholder="{{max_runtime}}">
+                                    </div>
+                                </div>
+                                <div class="control-group">
+                                    <div class="controls">
+                                        <button type="submit" class="btn" data-loading-text="<i class='icon-spinner icon-spin'></i>">Save</button>
+                                    </div>
+                                </div>
                             </form>
                             </script>
                             <div class="data"></div>

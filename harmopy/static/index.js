@@ -5,30 +5,43 @@ var store = {
     files: []
 };
 
+var templates = {};
+
 load = function(id) {
     // Load the json into the template and append it to the elem
-    var template = Handlebars.compile($('#' + id + '-template').html());
     $.get('/' + id, function(data){
         $.each([].concat(data), function(i, elem) {
             store[id][elem.id] = elem;
-            var html = template(elem);
+            var html = templates[id](elem);
             $('#' + id + ' .loading').hide();
             $('#' + id + ' .data').append(html);
             $('#' + id + ' .showondata').removeClass('hidden');
         });
         $('.confirm-file-delete').click(function() {
-            console.log($(this).data('id'));
-            $('#modal').modal({backdrop: true});
             $('#modal #confirmed-delete').data('id', $(this).data('id'));
             $(this).button('loading');
             $('#modal').modal('show');
+        });
+        $('.do-file-edit').click(function() {
+            var data = store.files[$(this).data('id')];
+            var html = templates.file_edit(data);
+            $('#file-edit .data').html(html);
+            $('#file-edit').hide();
+            $('#file-edit').removeClass('hidden');
+            $('#file-edit').fadeIn();
         });
     });
 }
 
 
-
 $(document).ready(function() {
+    templates = {
+        status: Handlebars.compile($('#status-template').html()),
+        history: Handlebars.compile($('#history-template').html()),
+        config: Handlebars.compile($('#config-template').html()),
+        files: Handlebars.compile($('#files-template').html()),
+        file_edit: Handlebars.compile($('#file_edit-template').html())
+    }
     load('status');
     load('history');
     load('config');
@@ -56,6 +69,7 @@ $(document).ready(function() {
         $('.confirm-file-delete').button('reset');
     });
     $('#modal').on('show', function(){
+        $('#modal').modal({backdrop: true});
         $('#modal').removeClass('hidden');
     });
 });
