@@ -1,6 +1,7 @@
 import configparser
 
 class Config(configparser.ConfigParser):
+    LAMBDA_TEXTS = {}
     def __init__(self, filename):
         super().__init__()
         with open(filename, 'r') as f:
@@ -8,14 +9,11 @@ class Config(configparser.ConfigParser):
         self._main_sections = ('general', 'status')
 
     def __getitem__(self, item):
-        if item not in self._main_sections:
-            return Section(super().__getitem__(item))
+        if item in self._main_sections:
+            except_keys = super().__getitem__('DEFAULT').keys()
         else:
-            # super() wouldn't work
-            return Section(dict(
-                (k,v) for k,v in super().__getitem__(item).items()
-                if k not in super(Config, self).__getitem__('DEFAULT').keys()
-            ))
+            except_keys = set()
+        return Section(super().__getitem__(item), except_keys)
 
     @property
     def main_sections(self):
@@ -28,14 +26,17 @@ class Config(configparser.ConfigParser):
 
 
 class Section(object):
-    def __init__(self, section):
+    def __init__(self, section, except_keys=[]):
         self._section = section
+        self.except_keys = set(except_keys)
 
-    def __getitem__(self, item, text_lambda=False):
+    def __getitem__(self, item):
+        if item in self.except_keys:
+            raise KeyError
         try:
             res = eval(self._section[item])
-            if text_lambda and hasattr(res, '__call__'):
-                raise Exception
+            if hasattr(res, '__call__'):
+                Config.LAMBDA_TEXTS[res] = self._section[item]
             return res
         except:
             return self._section[item]
@@ -52,5 +53,7 @@ class Section(object):
     def __getattr__(self, attr):
         return getattr(self._section, attr)
 
-    def items(self, text_lambda=False):
-        return [(k, self.__getitem__(k, text_lambda)) for k in self.keys()]
+    def items(self):
+        for key in self.keys():
+            if key not in self.except_keys:
+                yield (key, self[key])

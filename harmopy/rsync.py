@@ -100,6 +100,10 @@ class RsyncManager(object):
                 return target
         raise KeyError('No such file_id')
 
+    def expand(self, file_id):
+        raise NotImplementedError('TODO')
+        return [self[file_id]]
+
     def _ran_too_long(self):
         return self.max_runtime is not None and (datetime.now() - self.start_time).total_seconds() >= self.max_runtime
 

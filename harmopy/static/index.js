@@ -93,8 +93,9 @@ $(document).ready(function() {
                     $('#file-' + data.id).fadeOut();
                 else if(action == 'expand'){
                     $.each(data.files, function(i, file) {
-                        $(templates.files(file)).insertAfter('tr#file-' + data.id)
+                        $(templates.files(file).trim()).insertAfter('#file-' + data.id);
                     });
+                    $('#file-'+data.id).fadeOut();
                 }
             }
         })

@@ -5,6 +5,7 @@ import json
 import os.path
 import threading
 
+from . import config
 from . import logs
 
 # Monkey patch to avoid getting self closing server
@@ -19,6 +20,8 @@ class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime.datetime):
             return obj.strftime('%Y-%m-%d %H:%M')
+        if hasattr(obj, '__call__'):
+            return config.Config.LAMBDA_TEXTS[obj]
         return json.JSONEncoder.default(self, obj)
 
 def json_exposed(func):
@@ -61,12 +64,12 @@ class StatusPage(object):
                 'id': k,
                 'value': v,
                 'editable': self._config['status']['allow_conf_edit'],
-            } for k, v in section.items(text_lambda=True)],
+            } for k, v in section.items()],
         } for title, section in self._config.main_sections]
 
     @json_exposed
     def files(self):
-        return [dict(section.items(text_lambda=True), id=title, editable=self._config['status']['allow_conf_edit'])
+        return [dict(section.items(), id=title, editable=self._config['status']['allow_conf_edit'])
             for title, section in self._config.files + [('DEFAULT', self._config['DEFAULT'])]]
 
     @json_exposed
@@ -85,7 +88,8 @@ class StatusPage(object):
         return {
             'status': 200,
             'id': file_id,
-            'files': [self._rsyncs[file_id]],
+            'files': [dict(section.items(), id=title, editable=self._config['status']['allow_conf_edit'])
+                for title, section in self._rsyncs.expand(file_id)],
         }
 
 
