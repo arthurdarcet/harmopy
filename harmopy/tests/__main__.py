@@ -38,7 +38,7 @@ class Tests(unittest.TestCase):
 
     def test_config_files(self):
         expected = {
-            'directory 1': {
+            'directory1': {
                 'source': 'rsync://rsync.de.gentoo.org/gentoo-portage',
                 'dest': '/tmp/harmopy-tests',
                 'rsync_args': '-aP',

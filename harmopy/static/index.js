@@ -70,10 +70,17 @@ $(document).ready(function() {
         file_edit: Handlebars.compile($('#file_edit-template').html()),
         file_config: Handlebars.compile($('#file_config-template').html()),
     }
-    load('status');
+
+    refresh = function(){
+        load('status');
+        setTimeout(refresh, 2000);
+    }
+
+    refresh();
     load('history');
     load('config');
     load('files');
+
     $('.alert .close').click(function(){
         $('.alert').fadeOut();
     });
@@ -88,6 +95,9 @@ $(document).ready(function() {
                 $('.alert').hide();
                 $('.alert').removeClass('hidden');
                 $('.alert').fadeIn();
+                setTimeout(function(){
+                    $('.alert').fadeOut();
+                }, 10000);
             } else {
                 if(action == 'delete')
                     $('#file-' + data.id).fadeOut();

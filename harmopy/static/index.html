@@ -18,14 +18,27 @@
                             </div>
                             <script id="status-template" type="text/x-handlebars-template">
                             {{#if running}}
-                            <p><i class="icon-file icon"></i>{{source}}<i class="icon-angle-right"></i>{{destination}}</p>
-                            <p><i class="icon-download-alt icon"></i>{{speed}}</p>
-                            <p><i class="icon-time icon"></i>ETA: {{eta}}</p>
-                            <div class="progress progress-striped">
-                                <div class="bar" style="width: {{done}}%;"></div>
-                            </div>
+                                <p><i class="icon-double-angle-right"></i>{{source}}</p>
+                                <p><i class="icon-double-angle-left"></i>{{dest}}</p>
+                                {{#if speed}}<p><i class="icon-download-alt icon"></i>{{speed}}</p>{{/if}}
+                                {{#if current_eta}}<p><i class="icon-time icon"></i>{{current_eta}}</p>{{/if}}
+                                {{#if current_done}}{{#if current_file}}
+                                    <i class="icon-file icon pull-left"></i>
+                                    <div class="progress progress-info">
+                                        <div class="bar" style="width: {{current_done}}%;">
+                                            <small>{{current_file}}</small>
+                                        </div>
+                                    </div>
+                                {{/if}}{{/if}}
+                                <i class="icon-exchange icon pull-left"></i>
+                                <div class="progress progress-info">
+                                    <div class="bar" style="width: {{done}}%;">
+                                        <small>Total</small>
+                                    </div>
+                                </div>
                             {{else}}
-                            <p><i class="icon-exchange icon"></i><span class="label-important label">Not running</span></p>
+                                <p><i class="icon-exchange icon"></i><span class="">Not running</span></p>
+                                {{#if error}}<p><i class="icon-warning-sign icon"></i>{{error}}</p>{{/if}}
                             {{/if}}
                             </script>
                             <div class="data"></div>

@@ -1,28 +1,97 @@
 from datetime import datetime
 import itertools
 import logging
+import re
 import sh
+import threading
 
 
 logger = logging.getLogger(__name__)
 
-class Rsync(object):
+class Rsync(threading.Thread):
+    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+.B/s) +(?P<current_eta>[0-9:]+)$')
+    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+.B/s) +(?P<time_taken>[0-9:]+) +\(xfer#(?P<current_id>[0-9]+), to-check=[0-9]+/(?P<num_file>[0-9]+)\)$')
+    START_LINE = 'receiving incremental file list'
+
     def __init__(self, source, dest, rsync_args='', user=None, **_):
-        self.running = False
-        self.args = (rsync_args, source, dest)
-        self.user = user
+        super().__init__()
+        if user is not None:
+            self.rsync = sh.sudo.bake('-u', user, 'rsync')
+        else:
+            self.rsync = sh.rsync
+        self.rsync = self.rsync.bake(source, dest, *rsync_args.split())
+        self.daemon = True
+        self.running = threading.Event()
+        self._buffer = ''
+        self._status = {
+            'running': False,
+            'source': source,
+            'dest': dest,
+        }
+        self._status_lock = threading.RLock
+
+    def run(self):
+        self._cmd = self.rsync(progress=True, _out_bufsize=0, _out=self._buffer_output)
+
+    def _parse_stdout(self, line):
+        logging.debug('Got line from rsync: %r', line)
+        if not self._status['running']:
+            if line == self.START_LINE:
+                with self._status_lock():
+                    self._status['running'] = True
+            return
+
+        m1 = self.STATUS_LINE.match(line)
+        if m1 is not None:
+            d = m1.groupdict()
+            if d['speed'] != '0':
+                with self._status_lock():
+                    self._status.update(d)
+            return
+
+        m2 = self.FILE_DONE_LINE.match(line)
+        if m2 is not None:
+            d = m2.groupdict()
+            with self._status_lock():
+                self._status.update(d)
+                self._status['done'] = '{:.2%}'.format(int(d['current_id'])/int(d['num_file']))
+            return
+        with self._status_lock():
+            self._status['current_file'] = line
+
+    def _parse_stderr(self, line):
+        logging.warn('Rsync error %r', line)
+        with self._status_lock():
+            self._status.update({
+                'running': False,
+                'error': line,
+            })
+
+    def _buffer_output(self, char):
+        if char == '\r' or char == '\n':
+            self._parse_stdout(self._buffer)
+            self._buffer = ''
+        else:
+            self._buffer += char
 
     def start(self):
-        if self.running:
+        if self.running.is_set():
             return
-        self._cmd = sh.rsync(*self.args, _bg=True)
-        self.running = True
+        self.running.set()
+        super().start()
 
     def stop(self):
-        self.running = False
-        if not self.running or self.done:
+        if not self.running.is_set():
+            return
+        self.running.clear()
+        if self.done:
             return
         self._cmd.terminate()
+
+    @property
+    def status(self):
+        with self._status_lock():
+            return self._status
 
     @property
     def done(self):
@@ -31,16 +100,6 @@ class Rsync(object):
     @property
     def exit_code(self):
         return self._cmd.exit_code
-
-    @property
-    def status(self):
-        return {
-            'source': self.args[1],
-            'destination': self.args[2],
-            'speed': '442Ko/s',
-            'done': 42,
-            'eta': 2,
-        }
 
     def __str__(self):
         return '<(su {}) Rsync {} {} -> {}>'.format(self.user, *self.args)
@@ -92,7 +151,7 @@ class RsyncManager(object):
     def status(self):
         if self.current is None:
             return {'running': False}
-        return dict(self.current.status, running=True)
+        return dict(self.current.status)
 
     def __getitem__(self, file_id):
         for target in self.files:

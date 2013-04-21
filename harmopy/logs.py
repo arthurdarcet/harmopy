@@ -46,6 +46,7 @@ def config(level):
                 'level': 'INFO',
                 'handlers': ['console'],
                 'propagate': False,
-            }
+            },
+            'cherrypy.error': {'level': 'WARN'},
         },
     })

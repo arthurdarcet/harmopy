@@ -2,6 +2,7 @@ import cherrypy
 import datetime
 import functools
 import json
+import logging
 import os.path
 import threading
 
@@ -107,9 +108,11 @@ class StatusThread(threading.Thread):
     }
     def __init__(self, debug, config, rsyncs):
         super().__init__()
+        self.host = config['status']['host']
+        self.port = config['status']['port']
         cherrypy.config.update({
-            'server.socket_host': config['status']['host'],
-            'server.socket_port': int(config['status']['port']),
+            'server.socket_host': self.host,
+            'server.socket_port': self.port,
         })
         self.page = StatusPage(rsyncs, config)
         self.daemon = True
@@ -117,6 +120,7 @@ class StatusThread(threading.Thread):
     def run(self):
         app = cherrypy.tree.mount(self.page, config=self.config)
         app.log.access_log_format = '{h} "{r}" {s}'
+        logging.info('Binded status page socket to %s:%d', self.host, self.port)
         cherrypy.engine.start()
 
     def stop(self):
