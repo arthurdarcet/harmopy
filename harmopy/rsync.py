@@ -1,4 +1,5 @@
-from datetime import datetime
+import copy
+import datetime
 import itertools
 import logging
 import re
@@ -9,9 +10,10 @@ import threading
 logger = logging.getLogger(__name__)
 
 class Rsync(threading.Thread):
-    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+.B/s) +(?P<current_eta>[0-9:]+)$')
-    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+.B/s) +(?P<time_taken>[0-9:]+) +\(xfer#(?P<current_id>[0-9]+), to-check=[0-9]+/(?P<num_file>[0-9]+)\)$')
+    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<current_eta>[0-9:]+)$')
+    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<time_taken>[0-9:]+) +\(xfer#(?P<current_id>[0-9]+), to-check=[0-9]+/(?P<num_file>[0-9]+)\)$')
     START_LINE = 'receiving incremental file list'
+    IGNORE_LINE = [re.compile(r'^total size is [0-9]+ speedup is [.0-9]+')]
 
     def __init__(self, source, dest, rsync_args='', user=None, **_):
         super().__init__()
@@ -35,6 +37,18 @@ class Rsync(threading.Thread):
 
     def _parse_stdout(self, line):
         logging.debug('Got line from rsync: %r', line)
+        def update_status(d):
+            if d['speed'] != '0':
+                d['speed'] = float(d['speed'])
+                if d['speed_unit'] == 'M' or d['speed_unit'] == 'G':
+                    d['speed'] *= 1000
+                if d['speed_unit'] == 'G':
+                    d['speed'] *= 1000
+                if d['speed_unit'] == '':
+                    d['speed'] /= 1000
+                with self._status_lock():
+                    self._status.update(d)
+
         if not self._status['running']:
             if line == self.START_LINE:
                 with self._status_lock():
@@ -43,19 +57,20 @@ class Rsync(threading.Thread):
 
         m1 = self.STATUS_LINE.match(line)
         if m1 is not None:
-            d = m1.groupdict()
-            if d['speed'] != '0':
-                with self._status_lock():
-                    self._status.update(d)
-            return
+            return update_status(m1.groupdict())
 
         m2 = self.FILE_DONE_LINE.match(line)
         if m2 is not None:
             d = m2.groupdict()
-            with self._status_lock():
-                self._status.update(d)
-                self._status['done'] = '{:.2%}'.format(int(d['current_id'])/int(d['num_file']))
-            return
+            d['done'] = int(int(d['current_id'])/int(d['num_file']))
+            return update_status(d)
+
+        logging.debug(line)
+        logging.debug(self.IGNORE_LINE[0].match(line))
+        for ign in self.IGNORE_LINE:
+            if ign.match(line):
+                return
+        logging.debug(line)
         with self._status_lock():
             self._status['current_file'] = line
 
@@ -130,7 +145,6 @@ class RsyncManager(object):
         self.current = None
 
     def tick(self):
-        now = datetime.now()
         if self.current is None or self.current.done:
             self.prepare()
 
@@ -142,16 +156,17 @@ class RsyncManager(object):
         else:
             self.current.start()
 
-        while len(self.history) > 0 and (now - self.history[0]['time']).total_seconds() > self.history_length:
+        now = datetime.datetime.now().timestamp()
+        while len(self.history) > 0 and now - self.history[0]['time'] > self.history_length:
             del(self.history[0])
         if self.current is not None:
-            self.history.append({'time': now, 'status': self.status})
+            self.history.append({'time': int(now), 'status': copy.copy(self.status)})
 
     @property
     def status(self):
         if self.current is None:
             return {'running': False}
-        return dict(self.current.status)
+        return self.current.status
 
     def __getitem__(self, file_id):
         for target in self.files:
@@ -164,8 +179,9 @@ class RsyncManager(object):
         return [self[file_id]]
 
     def _ran_too_long(self):
-        return self.max_runtime is not None and (datetime.now() - self.start_time).total_seconds() >= self.max_runtime
+        return self.max_runtime is not None and \
+            (datetime.datetime.now() - self.start_time).total_seconds() >= self.max_runtime
 
     def _should_run(self):
-        now = datetime.now()
+        now = datetime.datetime.now()
         return self.should_run(now.weekday(), now.hour, now.minute)

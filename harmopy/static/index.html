@@ -4,6 +4,7 @@
         <title>Harmopy</title>
         <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
         <link href="//netdna.bootstrapcdn.com/font-awesome/3.0.2/css/font-awesome.css" rel="stylesheet">
+        <link href="//cdn.jsdelivr.net/jqplot/1.0.8/jquery.jqplot.min.css" rel="stylesheet">
         <link rel="stylesheet" type="text/css" href="static/index.css">
     </head>
     <body>
@@ -20,7 +21,7 @@
                             {{#if running}}
                                 <p><i class="icon-double-angle-right"></i>{{source}}</p>
                                 <p><i class="icon-double-angle-left"></i>{{dest}}</p>
-                                {{#if speed}}<p><i class="icon-download-alt icon"></i>{{speed}}</p>{{/if}}
+                                {{#if speed}}<p><i class="icon-download-alt icon"></i>{{speed}} kB/s</p>{{/if}}
                                 {{#if current_eta}}<p><i class="icon-time icon"></i>{{current_eta}}</p>{{/if}}
                                 {{#if current_done}}{{#if current_file}}
                                     <i class="icon-file icon pull-left"></i>
@@ -50,10 +51,7 @@
                             <div class="loading">
                                 <i class="icon-spinner icon-spin icon-4x"></i>
                             </div>
-                            <script id="history-template" type="text/x-handlebars-template">
-                            TODO
-                            </script>
-                            <div class="data"></div>
+                            <div class="data hidden"></div>
                         </div></div>
                     </li>
                 </ul>
@@ -173,7 +171,7 @@
                                 <div class="control-group">
                                     <label class="control-label" for="{{name}}">{{title}}</label>
                                     <div class="controls">
-                                        <input type="text" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}">
+                                        <input type="text" name="{{name}}" placeholder="{{placeholder}}" value="{{value}}" class="span5">
                                     </div>
                                 </div>
                             </script>
@@ -225,6 +223,8 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
         <script src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/1.0.0-rc.3/handlebars.min.js"></script>
-        <script type="text/javascript" src="static/index.js"></script>
+        <script src="//cdn.jsdelivr.net/jqplot/1.0.8/jquery.jqplot.min.js"></script>
+        <script src="//cdn.jsdelivr.net/jqplot/1.0.8/plugins/jqplot.dateAxisRenderer.min.js"></script>
+        <script src="static/index.js"></script>
     </body>
 </html>

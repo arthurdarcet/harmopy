@@ -45,11 +45,20 @@ class StatusPage(object):
 
     @json_exposed
     def status(self):
-        return dict(id='status', **self._rsyncs.status)
+        return dict(
+            id='status',
+            time=datetime.datetime.now().timestamp(),
+            **self._rsyncs.status
+        )
 
     @json_exposed
-    def history(self):
-        return [dict(h, id=h['time']) for h in self._rsyncs.history]
+    def history(self, debug=False):
+        if debug:
+            return self._rsyncs.history
+        return [{
+            'speed': h['status'].get('speed', 0),
+            'time': h['time'],
+        } for h in self._rsyncs.history]
 
     @json_exposed
     def logs(self):
