@@ -113,10 +113,14 @@ class Rsync(threading.Thread):
 
     @property
     def done(self):
+        if not self.running.is_set():
+            return False
         return not self._cmd.process.alive
 
     @property
     def exit_code(self):
+        if not self.running.is_set():
+            return 0
         return self._cmd.exit_code
 
     def __str__(self):
