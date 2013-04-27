@@ -17,6 +17,8 @@ class Rsync(threading.Thread):
 
     def __init__(self, source, dest, rsync_args='', user=None, **_):
         super().__init__()
+        self.user = user
+        self.args = (rsync_args, source, dest)
         if user is not None:
             self.rsync = sh.sudo.bake('-u', user, 'rsync')
         else:
@@ -36,8 +38,9 @@ class Rsync(threading.Thread):
         self._cmd = self.rsync(progress=True, _out_bufsize=0, _out=self._buffer_output)
 
     def _parse_stdout(self, line):
-        logging.debug('Got line from rsync: %r', line)
+        logger.debug('Got line from rsync: %r', line)
         def update_status(d):
+            logger.debug('Parsed it as %r', d)
             if d['speed'] != '0':
                 d['speed'] = float(d['speed'])
                 if d['speed_unit'] == 'M' or d['speed_unit'] == 'G':
@@ -65,17 +68,17 @@ class Rsync(threading.Thread):
             d['done'] = int(int(d['current_id'])/int(d['num_file']))
             return update_status(d)
 
-        logging.debug(line)
-        logging.debug(self.IGNORE_LINE[0].match(line))
         for ign in self.IGNORE_LINE:
             if ign.match(line):
+                logger.debug('Ignored')
                 return
-        logging.debug(line)
+
+        logger.debug('Parsed it as a file line')
         with self._status_lock():
             self._status['current_file'] = line
 
     def _parse_stderr(self, line):
-        logging.warn('Rsync error %r', line)
+        logger.warn('Rsync error %r', line)
         with self._status_lock():
             self._status.update({
                 'running': False,
@@ -106,18 +109,23 @@ class Rsync(threading.Thread):
     @property
     def status(self):
         with self._status_lock():
-            return self._status
+            return copy.copy(self._status)
 
     @property
     def done(self):
-        return self._cmd.process.alive
+        return not self._cmd.process.alive
 
     @property
     def exit_code(self):
         return self._cmd.exit_code
 
     def __str__(self):
-        return '<(su {}) Rsync {} {} -> {}>'.format(self.user, *self.args)
+        res = 'Rsync {} {} -> {}'.format(self.user, *self.args)
+        if self.user is not None:
+            res = '(su {}) '.format(self.user) + res
+        if self.running.is_set() and self.done:
+            res = res + ' [done {}]'.format(self.exit_code)
+        return '<' + res + '>'
 
 
 class RsyncManager(object):
@@ -133,9 +141,10 @@ class RsyncManager(object):
         self.max_runtime = target.get('max_runtime', None)
         self.should_run = target.get('should_run', lambda *_: True)
         self.current = Rsync(**target)
-        logger.debug('Prepared job %s', self.current)
+        logger.info('Prepared job %s', self.current)
 
     def stop(self):
+        logger.info('Stopping transfer %s', self.current)
         self.current.stop()
         if self.current.exit_code == -15:
             logger.info('Interrupted unfinished transfer %s', self.current)
@@ -145,6 +154,7 @@ class RsyncManager(object):
         self.current = None
 
     def tick(self):
+        logger.info('Tick %s', self)
         if self.current is None or self.current.done:
             self.prepare()
 
@@ -160,7 +170,7 @@ class RsyncManager(object):
         while len(self.history) > 0 and now - self.history[0]['time'] > self.history_length:
             del(self.history[0])
         if self.current is not None:
-            self.history.append({'time': int(now), 'status': copy.copy(self.status)})
+            self.history.append({'time': int(now), 'status': self.status})
 
     @property
     def status(self):
@@ -185,3 +195,6 @@ class RsyncManager(object):
     def _should_run(self):
         now = datetime.datetime.now()
         return self.should_run(now.weekday(), now.hour, now.minute)
+
+    def __str__(self):
+        return '<RsyncManager {} {}kB/s>'.format(self.current, self.status.get('speed', 0))
