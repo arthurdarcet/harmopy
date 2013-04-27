@@ -1,9 +1,14 @@
 import configparser
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 class Config(configparser.ConfigParser):
     LAMBDA_TEXTS = {}
     def __init__(self, filename):
         super().__init__()
+        self.filename = filename
         with open(filename, 'r') as f:
             self.read_file(f)
         self._main_sections = ('general', 'status')
@@ -14,6 +19,10 @@ class Config(configparser.ConfigParser):
         else:
             except_keys = set()
         return Section(super().__getitem__(item), except_keys)
+
+    def save(self):
+        with open(self.filename, 'w') as f:
+            return self.write(f)
 
     @property
     def main_sections(self):

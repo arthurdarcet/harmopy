@@ -67,13 +67,17 @@ on_config_load = function(data) {
     $('#config .submit').click(function(){
         var button = $(this);
         button.button('loading');
-        var data = {config_key: $(this).data('id')};
-        $.each($('#config-' + $(this).data('id') + ' input'), function(input){
+        var data = {config_key: button.data('id')};
+        $.each($('#config-' + button.data('id') + ' input'), function(){
             data[this.name] = this.value;
         });
-        console.log(data);
         $.post('/config', data, function(ret) {
-            if (ret == 'saved') {
+            if (ret['success']) {
+                $.each($('#config-' + button.data('id') + ' input'), function(){
+                    if (ret[this.name])
+                        this.placeholder = ret[this.name];
+                    this.value = '';
+                });
                 button.addClass('btn-success');
                 button.button('reset');
                 button.html('Saved');

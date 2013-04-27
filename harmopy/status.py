@@ -64,6 +64,16 @@ class StatusPage(object):
 
     @json_exposed
     def config(self, **kwargs):
+        if 'config_key' in kwargs:
+            logger.info('Config update: %r', kwargs)
+            section = self._config[kwargs.pop('config_key')]
+            res = {'success': True}
+            for k,v in kwargs.items():
+                if v != '':
+                    section[k] = v
+                    res[k] = v
+            self._config.save()
+            return res
         return [{
             'title': title.replace('_', ' ').capitalize(),
             'id': title,
