@@ -11,11 +11,9 @@ from . import logs
 
 # Monkey patch to avoid getting self closing server
 from cherrypy.process import servers
-def fake_wait_for_occupied_port(host, port): return
-servers.wait_for_occupied_port = fake_wait_for_occupied_port
+servers.wait_for_occupied_port = lambda h,p: None
 
-
-cherrypy.log.access_log_format = '{h} "{r}" {s}'
+logger = logging.getLogger(__name__)
 
 class JSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -106,6 +104,7 @@ class StatusPage(object):
 class StatusThread(threading.Thread):
     static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     config = {
+        '/': {'log.screen': False},
         '/static': {
             'tools.staticdir.on': True,
             'tools.staticdir.dir': static_dir,
@@ -115,7 +114,7 @@ class StatusThread(threading.Thread):
             'tools.staticfile.filename': os.path.join(static_dir, 'index.html'),
         },
     }
-    def __init__(self, debug, config, rsyncs):
+    def __init__(self, config, rsyncs):
         super().__init__()
         self.host = config['status']['host']
         self.port = config['status']['port']
@@ -129,7 +128,7 @@ class StatusThread(threading.Thread):
     def run(self):
         app = cherrypy.tree.mount(self.page, config=self.config)
         app.log.access_log_format = '{h} "{r}" {s}'
-        logging.info('Binded status page socket to %s:%d', self.host, self.port)
+        logger.info('Binded status page socket to %s:%d', self.host, self.port)
         cherrypy.engine.start()
 
     def stop(self):

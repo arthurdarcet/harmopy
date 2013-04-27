@@ -24,7 +24,13 @@ class Main(threading.Thread):
         parser.add_argument(
             '-d', '--debug',
             action='store_true',
-            help='Log debug messages',
+            help='Log DEBUG messages',
+            default=False
+        )
+        parser.add_argument(
+            '-i', '--info',
+            action='store_true',
+            help='Log INFO messages',
             default=False
         )
         parser.add_argument(
@@ -33,7 +39,7 @@ class Main(threading.Thread):
             default=config,
         )
 
-        args = parser.parse_args()
+        self.args = parser.parse_args()
 
         self.config = config.Config(configfile)
 
@@ -41,12 +47,13 @@ class Main(threading.Thread):
             self.config.files,
             self.config['general']['history_length']
         )
-        self.server = status.StatusThread(args.debug, self.config, self.rsyncs)
-        logs.config('DEBUG' if args.debug else 'INFO')
+        self.server = status.StatusThread(self.config, self.rsyncs)
 
     def run(self):
         try:
+            logs.config(False, False)
             self.server.start()
+            logs.config(self.args.debug, self.args.info)
             while True:
                 self.rsyncs.tick()
                 time.sleep(self.config['general']['check_sleep'])

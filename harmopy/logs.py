@@ -17,7 +17,7 @@ class MemoryHandler(logging.handlers.BufferingHandler):
 def get():
     return [h for h in logging.root.handlers if isinstance(h, MemoryHandler)][0].buffer
 
-def config(level):
+def config(debug, info):
     logging.config.dictConfig({
         'version': 1,
         'handlers': {
@@ -33,20 +33,23 @@ def config(level):
         },
         'formatters': {
             'clean': {
-                'format' : '%(asctime)s | %(levelname)-8s | %(name)-10s | %(message)s',
+                'format' : '%(asctime)s | %(name)-31s | %(levelname)-8s | %(message)s',
                 'datefmt' : '%Y-%m-%d %H:%M:%S',
             },
         },
         'loggers': {
-            '': {
-                'level': level,
-                'handlers': ['console', 'memory'],
+            'harmopy': {
+                'level': logging.DEBUG if debug else logging.INFO if info else logging.WARNING,
+                'handlers': ['memory'],
             },
             'cherrypy': {
-                'level': 'INFO',
-                'handlers': ['console'],
-                'propagate': False,
+                'level': logging.INFO if info or debug else logging.WARNING,
             },
-            'cherrypy.error': {'level': 'WARN'},
+            'cherrypy.error': {
+                'level': logging.WARNING
+            },
         },
+        'root': {
+            'handlers': ['console'],
+        }
     })
