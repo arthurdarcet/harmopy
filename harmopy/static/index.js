@@ -28,6 +28,8 @@ load = function(id) {
         });
         if(id == 'files')
             on_file_load(data);
+        if(id == 'config')
+            on_config_load(data);
         if(id == 'status' && store.history){
             store.history.push({
                 time: data['time'],
@@ -60,6 +62,35 @@ on_file_load = function(data) {
         $('#modal').modal('show');
     });
 };
+
+on_config_load = function(data) {
+    $('#config .submit').click(function(){
+        var button = $(this);
+        button.button('loading');
+        var data = {config_key: $(this).data('id')};
+        $.each($('#config-' + $(this).data('id') + ' input'), function(input){
+            data[this.name] = this.value;
+        });
+        console.log(data);
+        $.post('/config', data, function(ret) {
+            if (ret == 'saved') {
+                button.addClass('btn-success');
+                button.button('reset');
+                button.html('Saved');
+            } else {
+                button.addClass('btn-danger');
+                button.button('reset');
+                button.html('Failed');
+            }
+            setTimeout(function() {
+                button.removeClass('btn-success');
+                button.removeClass('btn-danger');
+                button.html('Save');
+            }, 3000);
+        });
+        return false;
+    });
+}
 
 Handlebars.registerHelper('file_config', function(title, name, file) {
     var placeholder = store.files['DEFAULT'][name];
