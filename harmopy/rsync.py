@@ -124,7 +124,7 @@ class Rsync(threading.Thread):
         return self._cmd.exit_code
 
     def __str__(self):
-        res = 'Rsync {} {} -> {}'.format(self.user, *self.args)
+        res = 'Rsync {} {} -> {}'.format(*self.args)
         if self.user is not None:
             res = '(su {}) '.format(self.user) + res
         if self.running.is_set() and self.done:
