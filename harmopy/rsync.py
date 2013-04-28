@@ -183,9 +183,9 @@ class RsyncManager(object):
             self.prepare()
 
         if not self._should_run():
-            self.stop()
+            self.stop(has_lock=True)
         elif self._ran_too_long():
-            self.stop()
+            self.stop(has_lock=True)
             return self.tick()
         else:
             self.current.start()
@@ -206,7 +206,7 @@ class RsyncManager(object):
     def expand(self, file_id):
         logger.info('Expanding %s', file_id)
         with self.working:
-            self.stop()
+            self.stop(has_lock=True)
             conf = self._config[file_id]
             try:
                 out = sh.rsync('--no-motd', conf['source']+'/').split('\n')
