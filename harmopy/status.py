@@ -131,8 +131,11 @@ class StatusPage(object):
             conf['source'] += '/'
         if conf['dest'][-1] != '/':
             conf['dest'] += '/'
+        next_id = 1
         for is_dir, new_file in files:
-            new_id = '{}/{}'.format(file_id, new_file)
+            while '{}_{}'.format(file_id, next_id) in self._config:
+                next_id += 1
+            new_id = '{}_{}'.format(file_id, next_id)
             self._config.add_section(new_id)
             section = self._config.copy_section(file_id, new_id)
             section['source'] += new_file
