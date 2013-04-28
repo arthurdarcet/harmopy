@@ -11,6 +11,6 @@ CONFIG_FILES = [
 ]
 
 for f in CONFIG_FILES:
-    if os.path.exists(f)
+    if os.path.exists(f):
         main.main(f)
 main.main(None)

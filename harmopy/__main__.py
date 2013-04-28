@@ -36,9 +36,11 @@ class Main(threading.Thread):
         config_arg = parser.add_argument(
             '-c', '--config',
             help='Config file',
-            default=configfile,
             type=argparse.FileType('r'),
+            required=True,
         )
+        if configfile is not None and os.path.exists(configfile):
+            config_arg.default = open(configfile, 'r')
 
         self.args = parser.parse_args()
 
