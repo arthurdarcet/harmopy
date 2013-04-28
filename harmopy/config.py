@@ -24,13 +24,17 @@ class Config(configparser.ConfigParser):
         with open(self.filename, 'w') as f:
             return self.write(f)
 
+    def copy_section(self, source, dest):
+        section = self[dest]
+        defaults = self.defaults()
+        for k,v in self[source].items():
+            section.__setitem__(k, v, except_value=defaults.get(k, None))
+        return section
+
     def move_section(self, source, dest):
         self.add_section(dest)
         if source in self:
-            section = self[dest]
-            defaults = self.defaults()
-            for k,v in self[source].items():
-                section.__setitem__(k, v, except_value=defaults.get(k, None))
+            self.copy_section(source, dest)
             self.remove_section(source)
 
     @property

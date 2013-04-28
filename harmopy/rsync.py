@@ -32,7 +32,7 @@ class Rsync(threading.Thread):
             'source': source,
             'dest': dest,
         }
-        self._status_lock = threading.RLock
+        self._status_lock = threading.Lock()
 
     def run(self):
         self._cmd = self.rsync(progress=True, _out_bufsize=0, _out=self._buffer_output)
@@ -49,12 +49,12 @@ class Rsync(threading.Thread):
                     d['speed'] *= 1000
                 if d['speed_unit'] == '':
                     d['speed'] /= 1000
-                with self._status_lock():
+                with self._status_lock:
                     self._status.update(d)
 
         if not self._status['running']:
             if line == self.START_LINE:
-                with self._status_lock():
+                with self._status_lock:
                     self._status['running'] = True
             return
 
@@ -74,12 +74,12 @@ class Rsync(threading.Thread):
                 return
 
         logger.debug('Parsed it as a file line')
-        with self._status_lock():
+        with self._status_lock:
             self._status['current_file'] = line
 
     def _parse_stderr(self, line):
         logger.warn('Rsync error %r', line)
-        with self._status_lock():
+        with self._status_lock:
             self._status.update({
                 'running': False,
                 'error': line,
@@ -108,7 +108,7 @@ class Rsync(threading.Thread):
 
     @property
     def status(self):
-        with self._status_lock():
+        with self._status_lock:
             return copy.copy(self._status)
 
     @property
@@ -139,6 +139,7 @@ class RsyncManager(object):
         self.history_length = history_length
         self.history = []
         self.current = None
+        self.working = threading.Lock()
 
     def prepare(self):
         target = next(self.targets)
@@ -158,6 +159,8 @@ class RsyncManager(object):
         self.current = None
 
     def tick(self):
+        if not self.working.acquire(False):
+            return
         logger.info('Tick %s', self)
         if self.current is None:
             self.prepare()
@@ -178,6 +181,7 @@ class RsyncManager(object):
             del(self.history[0])
         if self.current is not None:
             self.history.append({'time': int(now), 'status': self.status})
+        self.working.release()
 
     @property
     def status(self):
@@ -192,8 +196,20 @@ class RsyncManager(object):
         raise KeyError('No such file_id')
 
     def expand(self, file_id):
-        raise NotImplementedError('TODO')
-        return [self[file_id]]
+        logger.info('Expanding %s', file_id)
+        with self.working:
+            self.stop()
+            conf = self[file_id]
+            try:
+                out = sh.rsync('--no-motd', conf['source']+'/').split('\n')
+            except sh.ErrorReturnCode_23:
+                # Source is a file, not a dir
+                # This will be catched by cherrypy
+                raise Exception('Can\'t expand a file')
+
+            files = [(line[0] == 'd', line[43:]) for line in out if len(line) > 0 and line[43:] != '.']
+            logger.info('Retrieved a list of %d files', len(files))
+            return files
 
     def _ran_too_long(self):
         return self.max_runtime is not None and \

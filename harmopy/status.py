@@ -120,12 +120,24 @@ class StatusPage(object):
 
     @json_exposed
     def expand(self, file_id):
-        return {
-            'status': 200,
-            'id': file_id,
-            'files': [dict(section.items(), id=title, editable=self._config['status']['allow_conf_edit'])
-                for title, section in self._rsyncs.expand(file_id)],
-        }
+        files = self._rsyncs.expand(file_id)
+        conf = self._config[file_id]
+        if conf['source'][-1] != '/':
+            conf['source'] += '/'
+        if conf['dest'][-1] != '/':
+            conf['dest'] += '/'
+        for is_dir, new_file in files:
+            new_id = '{}/{}'.format(file_id, new_file)
+            self._config.add_section(new_id)
+            section = self._config.copy_section(file_id, new_id)
+            section['source'] += new_file
+            section['dest'] += new_file
+            if is_dir:
+                section['source'] += '/'
+                section['dest'] += '/'
+        self._config.remove_section(file_id)
+        self._config.save()
+        return {'status': 200}
 
 
 class StatusThread(threading.Thread):
