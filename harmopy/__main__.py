@@ -42,11 +42,7 @@ class Main(threading.Thread):
         self.args = parser.parse_args()
 
         self.config = config.Config(configfile)
-
-        self.rsyncs = rsync.RsyncManager(
-            self.config.files,
-            self.config['general']['history_length']
-        )
+        self.rsyncs = rsync.RsyncManager(self.config)
         self.server = status.StatusThread(self.config, self.rsyncs)
 
     def run(self):

@@ -133,13 +133,19 @@ class Rsync(threading.Thread):
 
 
 class RsyncManager(object):
-    def __init__(self, targets, history_length):
-        self.files = [dict(target, id=i, last_synced=None) for i, target in targets]
-        self.targets = itertools.cycle(self.files)
-        self.history_length = history_length
-        self.history = []
-        self.current = None
+    def __init__(self, config):
         self.working = threading.Lock()
+        self.current = None
+        self.init(config)
+
+    def init(self, config):
+        with self.working:
+            self.stop(has_lock=True)
+            self._config = config
+            self.files = [dict(target, id=i, last_synced=None) for i, target in config.files]
+            self.targets = itertools.cycle(self.files)
+            self.history_length = config['general']['history_length']
+            self.history = []
 
     def prepare(self):
         target = next(self.targets)
@@ -148,8 +154,13 @@ class RsyncManager(object):
         self.current = Rsync(**target)
         logger.info('Prepared job %s', self.current)
 
-    def stop(self):
+    def stop(self, has_lock=False):
+        if self.current is None:
+            return
         logger.info('Stopping transfer %s', self.current)
+        if not has_lock:
+            self.working.acquire()
+
         self.current.stop()
         if self.current.exit_code == -15:
             logger.info('Interrupted unfinished transfer %s', self.current)
@@ -157,6 +168,9 @@ class RsyncManager(object):
             logger.warn('Transfer %s failed with exit code %d', self.current, self.current.exit_code)
         self.start_time = None
         self.current = None
+
+        if not has_lock:
+            self.working.release()
 
     def tick(self):
         if not self.working.acquire(False):
@@ -189,17 +203,11 @@ class RsyncManager(object):
             return {'running': False}
         return self.current.status
 
-    def __getitem__(self, file_id):
-        for target in self.files:
-            if target['id'] == file_id:
-                return target
-        raise KeyError('No such file_id')
-
     def expand(self, file_id):
         logger.info('Expanding %s', file_id)
         with self.working:
             self.stop()
-            conf = self[file_id]
+            conf = self._config[file_id]
             try:
                 out = sh.rsync('--no-motd', conf['source']+'/').split('\n')
             except sh.ErrorReturnCode_23:

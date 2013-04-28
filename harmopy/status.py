@@ -41,6 +41,10 @@ class StatusPage(object):
         self._rsyncs = rsyncs
         self._config = config
 
+    def _config_changed(self):
+        logger.info('Applying new config')
+        self._rsyncs.init(self._config)
+
     def _config_save(self, data):
         if not self._config['status']['allow_conf_edit']:
             return {'status': 403, 'error': 'Conf edit forbidden'}
@@ -62,6 +66,7 @@ class StatusPage(object):
                 section[k] = v
                 res[k] = v
         self._config.save()
+        self._config_changed()
         return res
 
     @json_exposed
@@ -137,6 +142,7 @@ class StatusPage(object):
                 section['dest'] += '/'
         self._config.remove_section(file_id)
         self._config.save()
+        self._config_changed()
         return {'status': 200}
 
 
