@@ -1,0 +1,8 @@
+[Unit]
+Description=A file synchronisation deamon controlled by a web interface
+
+[Service]
+ExecStart=/usr/bin/harmopy -c /etc/harmopy.conf
+
+[Install]
+WantedBy=multi-user.target
