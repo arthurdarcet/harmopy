@@ -55,10 +55,13 @@ on_file_load = function(data) {
         var data = store.files[$(this).data('id')] || {};
         var html = templates.file_edit(data);
         $('#file-edit .data').html(html);
+        post_config('#file-edit', 'files');
+        $('#file-edit .close').click(function(){
+            $('#file-edit').hide();
+        });
         $('#file-edit').hide();
         $('#file-edit').removeClass('hidden');
         $('#file-edit').fadeIn();
-        post_config('#file-edit', 'files');
     });
     $('.confirm').click(function() {
         $(this).button('loading');
