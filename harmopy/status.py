@@ -41,6 +41,29 @@ class StatusPage(object):
         self._rsyncs = rsyncs
         self._config = config
 
+    def _config_save(self, data):
+        if not self._config['status']['allow_conf_edit']:
+            return {'status': 403, 'error': 'Conf edit forbidden'}
+        logger.info('Config update: %r', data)
+
+        config_key = data.pop('config_key')
+        res = {'status': 200}
+
+        if 'id' in data:
+            new_id = data.pop('id')
+            res['id'] = new_id
+
+            if new_id != config_key:
+                self._config.move_section(config_key, new_id)
+                config_key = new_id
+        section = self._config[config_key]
+        for k,v in data.items():
+            if v != '':
+                section[k] = v
+                res[k] = v
+        self._config.save()
+        return res
+
     @json_exposed
     def status(self):
         return dict(
@@ -65,15 +88,7 @@ class StatusPage(object):
     @json_exposed
     def config(self, **kwargs):
         if 'config_key' in kwargs:
-            logger.info('Config update: %r', kwargs)
-            section = self._config[kwargs.pop('config_key')]
-            res = {'success': True}
-            for k,v in kwargs.items():
-                if v != '':
-                    section[k] = v
-                    res[k] = v
-            self._config.save()
-            return res
+            return self._config_save(kwargs)
         return [{
             'title': title.replace('_', ' ').capitalize(),
             'id': title,
@@ -86,7 +101,9 @@ class StatusPage(object):
         } for title, section in self._config.main_sections]
 
     @json_exposed
-    def files(self):
+    def files(self, **kwargs):
+        if 'config_key' in kwargs:
+            return self._config_save(kwargs)
         return [dict(section.items(), id=title, editable=self._config['status']['allow_conf_edit'])
             for title, section in self._config.files + [('DEFAULT', self._config['DEFAULT'])]]
 

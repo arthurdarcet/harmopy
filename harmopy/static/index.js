@@ -11,8 +11,13 @@ var history_fetched = false;
 
 load = function(id) {
     // Load the json into the template and append it to the elem
+    $('#' + id + ' .data').hide();
+    $('#' + id + ' .showondata').addClass('hidden');
+    $('#' + id + ' .loading').show();
+    $('#' + id).show();
     $.get('/' + id, function(data){
         $('#' + id + ' .data').html('');
+        $('#' + id + ' .data').show();
         if(id == 'history'){
             store.history = data;
             return draw_history();
@@ -29,7 +34,7 @@ load = function(id) {
         if(id == 'files')
             on_file_load(data);
         if(id == 'config')
-            on_config_load(data);
+            post_config('#config', 'config');
         if(id == 'status' && store.history){
             store.history.push({
                 time: data['time'],
@@ -47,12 +52,13 @@ on_file_load = function(data) {
 
     $('#edit-defaults').removeClass('hidden');
     $('.do-file-edit').click(function() {
-        var data = store.files[$(this).data('id')];
+        var data = store.files[$(this).data('id')] || {};
         var html = templates.file_edit(data);
         $('#file-edit .data').html(html);
         $('#file-edit').hide();
         $('#file-edit').removeClass('hidden');
         $('#file-edit').fadeIn();
+        post_config('#file-edit', 'files');
     });
     $('.confirm').click(function() {
         $(this).button('loading');
@@ -63,34 +69,18 @@ on_file_load = function(data) {
     });
 };
 
-on_config_load = function(data) {
-    $('#config .submit').click(function(){
+post_config = function(form, url) {
+    $(form + ' .data .submit').click(function(){
         var button = $(this);
         button.button('loading');
         var data = {config_key: button.data('id')};
-        $.each($('#config-' + button.data('id') + ' input'), function(){
+        $.each($(form + '-' + button.data('id') + ' input'), function(){
             data[this.name] = this.value;
         });
-        $.post('/config', data, function(ret) {
-            if (ret['success']) {
-                $.each($('#config-' + button.data('id') + ' input'), function(){
-                    if (ret[this.name])
-                        this.placeholder = ret[this.name];
-                    this.value = '';
-                });
-                button.addClass('btn-success');
-                button.button('reset');
-                button.html('Saved');
-            } else {
-                button.addClass('btn-danger');
-                button.button('reset');
-                button.html('Failed');
-            }
-            setTimeout(function() {
-                button.removeClass('btn-success');
-                button.removeClass('btn-danger');
-                button.html('Save');
-            }, 3000);
+        $.post('/' + url, data, function(ret) {
+            show_result(ret);
+            $(form).hide();
+            load(url);
         });
         return false;
     });
@@ -157,6 +147,30 @@ function draw_history() {
     setTimeout(draw_history, STATUS_REFRESH);
 }
 
+var alert_timeout = null;
+function show_result(ret) {
+    clearTimeout(alert_timeout);
+    $('.alert').hide();
+    $('.alert').removeClass('hidden');
+    $('.alert').removeClass('alert-error');
+    $('.alert').removeClass('alert-success');
+    if(ret.status == 200) {
+        $('.alert').addClass('alert-success');
+        $('.alert #msg').html('Config saved');
+        $('.alert #error').hide();
+        $('.alert #success').show();
+    } else {
+        $('.alert').addClass('alert-error');
+        $('.alert #msg').html(ret.error);
+        $('.alert #success').hide();
+        $('.alert #error').show();
+    }
+    $('.alert').fadeIn();
+    alert_timeout = setTimeout(function(){
+        $('.alert').fadeOut();
+    }, 10000);
+}
+
 $(document).ready(function() {
     templates = {
         status: Handlebars.compile($('#status-template').html()),
@@ -185,23 +199,9 @@ $(document).ready(function() {
         $('#file-' + $(this).data('id') + ' .file-' + action).button('loading');
         $.get('/' + action + '/' + $(this).data('id'), function(data) {
             $('.confirm').button('reset');
-            if (data.status != 200) {
-                $('.alert #error-msg').html(data.error);
-                $('.alert').hide();
-                $('.alert').removeClass('hidden');
-                $('.alert').fadeIn();
-                setTimeout(function(){
-                    $('.alert').fadeOut();
-                }, 10000);
-            } else {
-                if(action == 'delete')
-                    $('#file-' + data.id).fadeOut();
-                else if(action == 'expand'){
-                    $.each(data.files, function(i, file) {
-                        $(templates.files(file).trim()).insertAfter('#file-' + data.id);
-                    });
-                    $('#file-'+data.id).fadeOut();
-                }
+            show_result(data);
+            if (data.status == 200) {
+                load('files');
             }
         })
     });

@@ -24,6 +24,15 @@ class Config(configparser.ConfigParser):
         with open(self.filename, 'w') as f:
             return self.write(f)
 
+    def move_section(self, source, dest):
+        self.add_section(dest)
+        if source in self:
+            section = self[dest]
+            defaults = self.defaults()
+            for k,v in self[source].items():
+                section.__setitem__(k, v, except_value=defaults.get(k, None))
+            self.remove_section(source)
+
     @property
     def main_sections(self):
         return [(section, self[section]) for section in self._main_sections]
@@ -50,14 +59,22 @@ class Section(object):
         except:
             return self._section[item]
 
-    def __setitem__(self, item, value):
+    @staticmethod
+    def _prepare_for_storage(value):
         if value is None or value == 'null' or (isinstance(value, str) and value.strip() == ''):
             value = 'None'
         if value == 'true':
             value = 'True'
         if value == 'false':
             value = 'False'
-        self._section[item] = str(value)
+        if hasattr(value, '__call__'):
+            value = Config.LAMBDA_TEXTS[value]
+        return str(value)
+
+    def __setitem__(self, item, value, except_value=None):
+        value = self._prepare_for_storage(value)
+        if value != except_value:
+            self._section[item] = value
 
     def __getattr__(self, attr):
         return getattr(self._section, attr)
