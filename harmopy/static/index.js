@@ -1,6 +1,7 @@
 var STATUS_REFRESH = 3000;
 var store = {
     status: {},
+    logs: {},
     history: null,
     config: {},
     files: {},
@@ -9,11 +10,13 @@ var store = {
 var templates = {};
 var history_fetched = false;
 
-load = function(id) {
+load = function(id, hide_before) {
     // Load the json into the template and append it to the elem
-    $('#' + id + ' .data').hide();
-    $('#' + id + ' .showondata').addClass('hidden');
-    $('#' + id + ' .loading').show();
+    if(hide_before) {
+        $('#' + id + ' .data').hide();
+        $('#' + id + ' .showondata').addClass('hidden');
+        $('#' + id + ' .loading').show();
+    }
     $('#' + id).show();
     $.get('/' + id, function(data){
         $('#' + id + ' .data').html('');
@@ -83,7 +86,7 @@ post_config = function(form, url) {
         $.post('/' + url, data, function(ret) {
             show_result(ret);
             $(form).hide();
-            load(url);
+            load(url, true);
         });
         return false;
     });
@@ -177,6 +180,7 @@ function show_result(ret) {
 $(document).ready(function() {
     templates = {
         status: Handlebars.compile($('#status-template').html()),
+        logs: Handlebars.compile($('#logs-template').html()),
         config: Handlebars.compile($('#config-template').html()),
         files: Handlebars.compile($('#files-template').html()),
         file_edit: Handlebars.compile($('#file_edit-template').html()),
@@ -185,6 +189,7 @@ $(document).ready(function() {
 
     refresh = function(){
         load('status');
+        load('logs');
         setTimeout(refresh, STATUS_REFRESH);
     }
 

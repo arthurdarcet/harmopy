@@ -21,7 +21,7 @@ body {
 a:hover {
     text-decoration: none;
 }
-#files {
+#files, #logs {
     font-size: x-small;
 }
 
@@ -30,4 +30,12 @@ a:hover {
     margin-left: 5px;
     margin-top: -2px;
     color: #ccc;
+}
+
+#logs li {
+    font-family: monospace;
+    list-style: none;
+}
+#logs ul {
+    margin: 0;
 }

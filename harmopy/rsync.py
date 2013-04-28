@@ -159,7 +159,10 @@ class RsyncManager(object):
 
     def tick(self):
         logger.info('Tick %s', self)
-        if self.current is None or self.current.done:
+        if self.current is None:
+            self.prepare()
+        elif self.current.done:
+            logger.info('Finnished transfor %s', self.current)
             self.prepare()
 
         if not self._should_run():

@@ -15,7 +15,7 @@ class MemoryHandler(logging.handlers.BufferingHandler):
 
 
 def get():
-    return [h for h in logging.root.handlers if isinstance(h, MemoryHandler)][0].buffer
+    return [h for h in logging.getLogger('harmopy').handlers if isinstance(h, MemoryHandler)][0].buffer[::-1]
 
 def config(debug, info):
     logging.config.dictConfig({
@@ -28,13 +28,17 @@ def config(debug, info):
             'memory': {
                 '()': MemoryHandler,
                 'capacity': 1000,
-                'formatter': 'clean',
+                'formatter': 'short',
             },
         },
         'formatters': {
             'clean': {
                 'format' : '%(asctime)s | %(name)-31s | %(levelname)-8s | %(message)s',
                 'datefmt' : '%Y-%m-%d %H:%M:%S',
+            },
+            'short': {
+                'format' : '%(asctime)s | %(levelname)-8s | %(message)s',
+                'datefmt' : '%H:%M:%S',
             },
         },
         'loggers': {
