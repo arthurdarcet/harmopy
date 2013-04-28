@@ -18,7 +18,7 @@ from . import status
 
 
 class Main(threading.Thread):
-    def __init__(self, configfile):
+    def __init__(self, configfile=None):
         super().__init__()
         parser = argparse.ArgumentParser()
         parser.add_argument(
@@ -33,15 +33,16 @@ class Main(threading.Thread):
             help='Log INFO messages',
             default=False
         )
-        parser.add_argument(
+        config_arg = parser.add_argument(
             '-c', '--config',
             help='Config file',
-            default=config,
+            default=configfile,
+            type=argparse.FileType('r'),
         )
 
         self.args = parser.parse_args()
 
-        self.config = config.Config(configfile)
+        self.config = config.Config(self.args.config)
         self.rsyncs = rsync.RsyncManager(self.config)
         self.server = status.StatusThread(self.config, self.rsyncs)
 

@@ -6,11 +6,11 @@ logger = logging.getLogger(__name__)
 
 class Config(configparser.ConfigParser):
     LAMBDA_TEXTS = {}
-    def __init__(self, filename):
+    def __init__(self, file):
         super().__init__()
-        self.filename = filename
-        with open(filename, 'r') as f:
-            self.read_file(f)
+        self.filename = file.name
+        self.read_file(file)
+        file.close()
         self._main_sections = ('general', 'status')
 
     def __getitem__(self, item):
