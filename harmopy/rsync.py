@@ -2,8 +2,10 @@ import copy
 import datetime
 import itertools
 import logging
+import os
 import re
 import sh
+import sys
 import threading
 
 
@@ -19,6 +21,16 @@ class Rsync(threading.Thread):
         super().__init__()
         self.user = user
         self.args = (rsync_args, source, dest)
+
+        dest_dir = os.path.split(dest)[0]
+        if not os.path.isdir(dest_dir):
+            if os.path.exists(dest_dir):
+                logger.critical('Destination %s isn\'t valid because a file exists at %s', dest, dest_dir)
+                sys.exit(1)
+            sh.mkdir('-p', dest_dir)
+            if user is not None:
+                sh.chown('{}:'.format(user), dest_dir)
+
         if user is not None:
             self.rsync = sh.sudo.bake('-u', user, 'rsync')
         else:
@@ -170,7 +182,7 @@ class RsyncManager(object):
     def tick(self):
         if not self.working.acquire(False):
             return
-        logger.info('Tick %s', self)
+        logger.debug('Tick %s', self)
         if self.current is None:
             self.prepare()
         elif self.current.done:

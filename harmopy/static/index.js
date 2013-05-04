@@ -125,7 +125,7 @@ function draw_history() {
             xaxis: {
                 renderer: $.jqplot.DateAxisRenderer,
                 tickOptions: {formatString: '%H:%M:%S'},
-                pad: 0,
+                pad: 1,
             },
             yaxis: {
                 min: 0,
