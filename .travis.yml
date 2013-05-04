@@ -1,0 +1,6 @@
+language: python
+python:
+  - "3.2"
+  - "3.3"
+script: "python harmopy/tests"
+install: "pip install -r requirements.pip"
