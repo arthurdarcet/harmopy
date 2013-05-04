@@ -65,7 +65,7 @@ class Rsync(threading.Thread):
         m2 = self.FILE_DONE_LINE.match(line)
         if m2 is not None:
             d = m2.groupdict()
-            d['done'] = int(int(d['current_id'])/int(d['num_file']))
+            d['done'] = int(d['current_id'])/int(d['num_file'])
             return update_status(d)
 
         for ign in self.IGNORE_LINE:
