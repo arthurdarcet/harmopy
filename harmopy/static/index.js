@@ -128,7 +128,7 @@ function draw_history() {
             },
             yaxis: {
                 min: 0,
-                pad: 1.1,
+                pad: 1.03,
             }
         },
 
