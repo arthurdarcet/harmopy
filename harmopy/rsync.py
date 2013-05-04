@@ -100,11 +100,11 @@ class Rsync(threading.Thread):
 
     def stop(self):
         if not self.running.is_set():
-            return
+            return False
         self.running.clear()
-        if self.done:
-            return
-        self._cmd.terminate()
+        if not self.done:
+            self._cmd.terminate()
+        return True
 
     @property
     def status(self):
@@ -140,8 +140,9 @@ class RsyncManager(object):
 
     def init(self, config):
         with self.working:
-            self.stop(has_lock=True)
+            self._stop()
             self._config = config
+            self.start_time = None
             self.files = [dict(target, id=i, last_synced=None) for i, target in config.files]
             self.targets = itertools.cycle(self.files)
             self.history_length = config['general']['history_length']
@@ -152,25 +153,19 @@ class RsyncManager(object):
         self.max_runtime = target.get('max_runtime', None)
         self.should_run = target.get('should_run', lambda *_: True)
         self.current = Rsync(**target)
-        logger.info('Prepared job %s', self.current)
+        logger.debug('Prepared job %s', self.current)
 
-    def stop(self, has_lock=False):
+    def _stop(self):
         if self.current is None:
             return
-        logger.info('Stopping transfer %s', self.current)
-        if not has_lock:
-            self.working.acquire()
-
-        self.current.stop()
+        if self.current.stop():
+            logger.info('Stopped transfer %s', self.current)
         if self.current.exit_code == -15:
             logger.info('Interrupted unfinished transfer %s', self.current)
         elif self.current.exit_code > 0:
             logger.warn('Transfer %s failed with exit code %d', self.current, self.current.exit_code)
         self.start_time = None
         self.current = None
-
-        if not has_lock:
-            self.working.release()
 
     def tick(self):
         if not self.working.acquire(False):
@@ -179,16 +174,19 @@ class RsyncManager(object):
         if self.current is None:
             self.prepare()
         elif self.current.done:
-            logger.info('Finnished transfor %s', self.current)
+            logger.info('Finnished transfer %s', self.current)
             self.prepare()
 
         if not self._should_run():
-            self.stop(has_lock=True)
+            self._stop()
         elif self._ran_too_long():
-            self.stop(has_lock=True)
+            self._stop()
+            self.working.release()
             return self.tick()
-        else:
+        elif self.start_time is None:
+            logger.info('Started transfer %s', self.current)
             self.current.start()
+            self.start_time = datetime.datetime.now()
 
         now = datetime.datetime.now().timestamp()
         while len(self.history) > 0 and now - self.history[0]['time'] > self.history_length:
@@ -206,7 +204,7 @@ class RsyncManager(object):
     def expand(self, file_id):
         logger.info('Expanding %s', file_id)
         with self.working:
-            self.stop(has_lock=True)
+            self._stop()
             conf = self._config[file_id]
             try:
                 out = sh.rsync('--no-motd', conf['source']+'/').split('\n')
@@ -220,7 +218,7 @@ class RsyncManager(object):
             return files
 
     def _ran_too_long(self):
-        return self.max_runtime is not None and \
+        return self.max_runtime is not None and self.start_time is not None and \
             (datetime.datetime.now() - self.start_time).total_seconds() >= self.max_runtime
 
     def _should_run(self):
