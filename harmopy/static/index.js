@@ -38,6 +38,11 @@ load = function(id, hide_before) {
             on_file_load(data);
         if(id == 'config')
             post_config('#config', 'config');
+        if(id == 'logs') {
+            var elems = $('.logs .data').children();
+            while(elems.length > 100)
+                $(elems[elems.length - 1]).remove();
+        }
         if(id == 'status' && store.history){
             store.history.push({
                 time: data['time'],

@@ -27,7 +27,7 @@ def config(debug, info):
             },
             'memory': {
                 '()': MemoryHandler,
-                'capacity': 1000,
+                'capacity': 100,
                 'formatter': 'short',
             },
         },
