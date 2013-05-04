@@ -5,6 +5,7 @@ from harmopy import __main__ as main
 
 
 CONFIG_FILES = [
+    '../harmopy.conf',
     'harmopy.conf',
     os.path.expanduser('.harmopy.conf'),
     '/etc/harmopy.conf',
