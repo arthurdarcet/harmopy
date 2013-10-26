@@ -11,7 +11,7 @@ setuptools.setup(
     author_email='arthur@darcet.fr',
     description="A file synchronisation deamon controlled by a web interface.",
     license='MIT',
-    keywords=['irc', 'notification', 'bot'],
+    keywords=['file', 'synchronisation', 'daemon', 'webui'],
     url='http://github.com/arthurdarcet/harmopy',
     download_url='http://pypi.python.org/pypi/harmopy/',
     packages=['harmopy'],
