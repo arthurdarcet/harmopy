@@ -114,6 +114,7 @@ class StatusPage(object):
 
     @json_exposed
     def delete(self, file_id):
+        logger.info('Deleting file section %r', file_id)
         self._config.remove_section(file_id)
         self._config.save()
         return {

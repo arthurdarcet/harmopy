@@ -1,26 +1,14 @@
 body {
     padding-top: 20px;
 }
-.loading {
-    text-align: center;
-}
-.icon {
-    margin-right: 5px;
-}
-
-#config .form-horizontal .control-label {
-    width: 100px;
-}
-#config .form-horizontal .controls {
-    margin-left: 110px;
-}
-#config .form-horizontal .controls input {
-    width: 120px;
+.glyphicon {
+    margin-right: 9px;
 }
 
 a:hover {
     text-decoration: none;
 }
+
 #files, #logs {
     font-size: x-small;
 }
@@ -34,8 +22,7 @@ a:hover {
 
 #logs li {
     font-family: monospace;
-    list-style: none;
 }
-#logs ul {
-    margin: 0;
+#logs {
+    overflow: hidden;
 }

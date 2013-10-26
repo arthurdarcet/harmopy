@@ -14,8 +14,6 @@ load = function(id, hide_before) {
     // Load the json into the template and append it to the elem
     if(hide_before) {
         $('#' + id + ' .data').hide();
-        $('#' + id + ' .showondata').addClass('hidden');
-        $('#' + id + ' .loading').show();
     }
     $('#' + id).show();
     $.get('/' + id, function(data){
@@ -27,12 +25,10 @@ load = function(id, hide_before) {
         }
         $.each([].concat(data), function(i, elem) {
             store[id][elem.id] = elem;
+            var html = templates[id](elem);
             if (elem.id == 'DEFAULT')
                 return;
-            var html = templates[id](elem);
-            $('#' + id + ' .loading').hide();
             $('#' + id + ' .data').append(html);
-            $('#' + id + ' .showondata').removeClass('hidden');
         });
         if(id == 'files')
             on_file_load(data);
@@ -116,7 +112,6 @@ function draw_history() {
             new Date(store.history[i].time*1000),
             store.history[i].speed
         ]);
-    $('#history .loading').hide();
     $('#history .data').removeClass('hidden');
     $('#history .data').html('');
     $.jqplot('history .data', [line], {
@@ -219,11 +214,8 @@ $(document).ready(function() {
             }
         })
     });
-    $('#modal').on('hide', function(){
+    $('#modal').modal({show: false});
+    $('#modal').on('hide.bs.modal', function(){
         $('.confirm').button('reset');
-        $('.confirm').button('reset');
-    });
-    $('#modal').on('show', function(){
-        $('#modal').removeClass('hidden');
     });
 });
