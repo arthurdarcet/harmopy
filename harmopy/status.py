@@ -114,10 +114,8 @@ class StatusPage(object):
 
     @json_exposed
     def delete(self, file_id):
-        return {
-            'status': 403,
-            'error': 'Config edit not allowed',
-        }
+        self._config.remove_section(file_id)
+        self._config.save()
         return {
             'status': 200,
             'id': file_id,
