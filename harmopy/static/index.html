@@ -19,8 +19,8 @@
                             <div class="data"></div>
                             <script id="status-template" type="text/x-handlebars-template">
                                 {{#if running}}
-                                    <p><i class="glyphicon glyphicon-log-out"></i>{{source}}</p>
-                                    <p><i class="glyphicon glyphicon-log-in"></i>{{dest}}</p>
+                                    <p><i class="glyphicon glyphicon-log-out"></i><small>{{source}}</small></p>
+                                    <p><i class="glyphicon glyphicon-log-in"></i><small>{{dest}}</small></p>
                                     {{#if speed}}<p><i class="glyphicon-download-alt glyphicon"></i>{{speed}} kB/s</p>{{/if}}
                                     {{#if current_eta}}<p><i class="glyphicon-time glyphicon"></i>{{current_eta}}</p>{{/if}}
                                     {{#if current_done}}{{#if current_file}}
@@ -83,9 +83,9 @@
                                     <th colspan="2">Rsync</th>
                                     <th>Source</th>
                                     <th>Destination</th>
-                                    <th>Run hours</th>
-                                    <th>Priority</th>
-                                    <th>Last synced</th>
+                                    <th class="col-md-3">Run hours</th>
+                                    <th width="56px">Priority</th>
+                                    <th width="82px">Last synced</th>
                                     <th width="73px"></th>
                                 </tr>
                             </thead>
