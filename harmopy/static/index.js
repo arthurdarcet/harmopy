@@ -16,7 +16,7 @@ load = function(id, hide_before) {
         $('#' + id + ' .data').hide();
     }
     $('#' + id).show();
-    $.get('/' + id, function(data){
+    $.get('/status/' + id, function(data){
         $('#' + id + ' .data').html('');
         $('#' + id + ' .data').show();
         if(id == 'history'){
@@ -84,7 +84,7 @@ post_config = function(form, url) {
         $.each($(form + '-' + button.data('id') + ' input'), function(){
             data[this.name] = this.value;
         });
-        $.post('/' + url, data, function(ret) {
+        $.post('/status/' + url, data, function(ret) {
             show_result(ret);
             $(form).hide();
             load(url, true);
@@ -206,7 +206,7 @@ $(document).ready(function() {
         $('#modal').modal('hide');
         var action = $(this).data('action');
         $('#file-' + $(this).data('id') + ' .file-' + action).button('loading');
-        $.get('/' + action + '/' + $(this).data('id'), function(data) {
+        $.get('/status/' + action + '/' + $(this).data('id'), function(data) {
             $('.confirm').button('reset');
             show_result(data);
             if (data.status == 200) {

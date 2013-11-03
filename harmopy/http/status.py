@@ -1,42 +1,14 @@
-import cherrypy
 import datetime
-import functools
-import json
 import logging
-import os.path
-import threading
 
-from . import config
-from . import logs
+from .. import config
+from .. import logs
+from .utils import json_exposed
 
-# Monkey patch to avoid getting self closing server
-from cherrypy.process import servers
-servers.wait_for_occupied_port = lambda h,p: None
 
 logger = logging.getLogger(__name__)
 
-class JSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime('%Y-%m-%d %H:%M')
-        if hasattr(obj, '__call__'):
-            return config.Config.LAMBDA_TEXTS[obj]
-        return json.JSONEncoder.default(self, obj)
-
-def json_exposed(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kw):
-        try:
-            value = func(*args, **kw)
-        except Exception as e:
-            value = {'status': 500, 'error': str(e)}
-        cherrypy.response.headers['Content-Type'] = 'application/json'
-        return json.dumps(value, cls=JSONEncoder).encode('utf8')
-    wrapper.exposed = True
-    return wrapper
-
-
-class StatusPage(object):
+class Page:
     def __init__(self, rsyncs, config):
         self._rsyncs = rsyncs
         self._config = config
@@ -146,37 +118,3 @@ class StatusPage(object):
         self._config.save()
         self._config_changed()
         return {'status': 200}
-
-
-class StatusThread(threading.Thread):
-    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    config = {
-        '/': {'log.screen': False},
-        '/static': {
-            'tools.staticdir.on': True,
-            'tools.staticdir.dir': static_dir,
-        },
-        '/index': {
-            'tools.staticfile.on': True,
-            'tools.staticfile.filename': os.path.join(static_dir, 'index.html'),
-        },
-    }
-    def __init__(self, config, rsyncs):
-        super().__init__()
-        self.host = config['status']['host']
-        self.port = config['status']['port']
-        cherrypy.config.update({
-            'server.socket_host': self.host,
-            'server.socket_port': self.port,
-        })
-        self.page = StatusPage(rsyncs, config)
-        self.daemon = True
-
-    def run(self):
-        app = cherrypy.tree.mount(self.page, config=self.config)
-        app.log.access_log_format = '{h} "{r}" {s}'
-        logger.info('Binded status page socket to %s:%d', self.host, self.port)
-        cherrypy.engine.start()
-
-    def stop(self):
-        cherrypy.engine.exit()
