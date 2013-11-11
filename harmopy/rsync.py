@@ -1,3 +1,4 @@
+import cherrypy
 import copy
 import datetime
 import itertools
@@ -149,6 +150,8 @@ class Rsync(threading.Thread):
 
 
 class RsyncManager(object):
+    LISTING_LINE = re.compile(r'^(?P<directory>d|-)[rwx-]{9} +(?P<size>[0-9]+) [0-9/]+ [0-9:]+ (?P<file>.*)$')
+
     def __init__(self, config):
         self.working = threading.Lock()
         self.current = None
@@ -224,19 +227,31 @@ class RsyncManager(object):
             status['stopped_until'] = str(self.stop_until)
         return status
 
-    def expand(self, file_id, path='/'):
+    def expand(self, file_id, path=''):
         logger.info('Expanding %s', file_id)
+        if path:
+            path += '/'
         with self.working:
             self._stop()
             conf = self._config[file_id]
             try:
-                out = sh.rsync('--no-motd', conf['source'] + path).split('\n')
+                out = sh.rsync('--no-motd', '--no-h', conf['source'] + '/' + path + '/').split('\n')
             except sh.ErrorReturnCode_23:
-                # Source is a file, not a dir
-                # This will be catched by cherrypy
-                raise Exception('Can\'t expand a file')
+                raise cherrypy.HTTPError(400, 'The path {!r} in the rsync target {} is not a directory'.format(path, file_id))
 
-            files = [(line[0] == 'd', line[43:]) for line in out if len(line) > 0 and line[43:] != '.']
+            files = []
+            for line in out:
+                line = line.strip(' ')
+                if line is '':
+                    continue
+                match = self.LISTING_LINE.match(line)
+                if match is None:
+                    logger.critical('Error parsing rsync listing (line %r)', line)
+                else:
+                    data = match.groupdict()
+                    if data['file'] != '.':
+                        files.append((data['directory'] == 'd', data['file']))
+
             logger.info('Retrieved a list of %d files', len(files))
             return files
 
