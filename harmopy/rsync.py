@@ -167,6 +167,7 @@ class RsyncManager(object):
         self.max_runtime = target.get('max_runtime', None)
         self.should_run = target.get('should_run', lambda *_: True)
         self.current = Rsync(**target)
+        self.start_time = None
         logger.debug('Prepared job %s', self.current)
 
     def _stop(self):
