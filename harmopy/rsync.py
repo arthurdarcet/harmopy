@@ -12,8 +12,8 @@ import threading
 logger = logging.getLogger(__name__)
 
 class Rsync(threading.Thread):
-    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9,]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<current_eta>[0-9:]+)$')
-    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9,]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<time_taken>[0-9:]+) +\(xfe?r#(?P<current_id>[0-9]+), (?:ir|to)-ch(?:ec)?k=[0-9]+/(?P<num_file>[0-9]+)\)$')
+    STATUS_LINE = re.compile(r'^(?P<done_bits>[0-9,]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<current_eta>[0-9:]+)$')
+    FILE_DONE_LINE = re.compile(r'^(?P<done_bits>[0-9,]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<time_taken>[0-9:]+) +\(xfe?r#(?P<current_id>[0-9]+), (?:ir|to)-ch(?:ec)?k=[0-9]+/(?P<num_file>[0-9]+)\)$')
     START_LINE = 'receiving incremental file list'
     IGNORE_LINE = [re.compile(r'^total size is [0-9]+ speedup is [.0-9]+')]
 
@@ -71,6 +71,8 @@ class Rsync(threading.Thread):
                 with self._status_lock:
                     self._status['running'] = True
             return
+
+        line = line.strip(' ')
 
         m1 = self.STATUS_LINE.match(line)
         if m1 is not None:
