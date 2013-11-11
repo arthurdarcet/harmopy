@@ -14,7 +14,7 @@ setuptools.setup(
     keywords=['file', 'synchronisation', 'daemon', 'webui'],
     url='http://github.com/arthurdarcet/harmopy',
     download_url='http://pypi.python.org/pypi/harmopy/',
-    packages=['harmopy'],
+    packages=['harmopy', 'harmopy.webui'],
     package_data={'harmopy': ['static/*']},
     install_requires=[
         'cherrypy>=3.2',
