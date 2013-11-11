@@ -12,10 +12,18 @@ import threading
 logger = logging.getLogger(__name__)
 
 class Rsync(threading.Thread):
-    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<current_eta>[0-9:]+)$')
-    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<time_taken>[0-9:]+) +\(xfer#(?P<current_id>[0-9]+), to-check=[0-9]+/(?P<num_file>[0-9]+)\)$')
+    STATUS_LINE = re.compile(r'^ +(?P<done_bits>[0-9,]+) +(?P<current_done>[0-9]{1,3})% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<current_eta>[0-9:]+)$')
+    FILE_DONE_LINE = re.compile(r'^ +(?P<done_bits>[0-9,]+) +(?P<current_done>100)% +(?P<speed>[.0-9]+)(?P<speed_unit>.?)B/s +(?P<time_taken>[0-9:]+) +\(xfe?r#(?P<current_id>[0-9]+), (?:ir|to)-ch(?:ec)?k=[0-9]+/(?P<num_file>[0-9]+)\)$')
     START_LINE = 'receiving incremental file list'
     IGNORE_LINE = [re.compile(r'^total size is [0-9]+ speedup is [.0-9]+')]
+
+    SPEED_UNITS_TO_KB = {
+        'T': 1e9,
+        'G': 1e6,
+        'M': 1e3,
+        'k': 1,
+        '': 1e-3,
+    }
 
     def __init__(self, source, dest, rsync_args='', user=None, **_):
         super().__init__()
@@ -35,7 +43,7 @@ class Rsync(threading.Thread):
             self.rsync = sh.sudo.bake('-u', user, 'rsync')
         else:
             self.rsync = sh.rsync
-        self.rsync = self.rsync.bake(source, dest, *rsync_args.split())
+        self.rsync = self.rsync.bake(source, dest, '--no-h', *rsync_args.split(), progress=True)
         self.daemon = True
         self.running = threading.Event()
         self._buffer = ''
@@ -47,20 +55,14 @@ class Rsync(threading.Thread):
         self._status_lock = threading.Lock()
 
     def run(self):
-        self._cmd = self.rsync(progress=True, _out_bufsize=0, _out=self._buffer_output)
+        self._cmd = self.rsync(_out_bufsize=0, _out=self._buffer_output)
 
     def _parse_stdout(self, line):
         logger.debug('Got line from rsync: %r', line)
         def update_status(d):
             logger.debug('Parsed it as %r', d)
             if d['speed'] != '0':
-                d['speed'] = float(d['speed'])
-                if d['speed_unit'] == 'M' or d['speed_unit'] == 'G':
-                    d['speed'] *= 1000
-                if d['speed_unit'] == 'G':
-                    d['speed'] *= 1000
-                if d['speed_unit'] == '':
-                    d['speed'] /= 1000
+                d['speed'] = float(d['speed']) * self.SPEED_UNITS_TO_KB[d['speed_unit']]
                 with self._status_lock:
                     self._status.update(d)
 
