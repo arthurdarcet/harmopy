@@ -6,11 +6,15 @@ import sys
 import threading
 import time
 
+if __name__ == '__main__' and __package__ == '':
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    __package__ = 'harmopy'
+    import harmopy
 
 from . import config
 from . import logs
 from . import rsync
-from . import http
+from . import webui
 
 
 class Main(threading.Thread):
@@ -44,7 +48,7 @@ class Main(threading.Thread):
 
         self.config = config.Config(self.args.config)
         self.rsyncs = rsync.RsyncManager(self.config)
-        self.server = http.Thread(self.config, self.rsyncs)
+        self.server = webui.Thread(self.config, self.rsyncs)
 
     def run(self):
         try:
@@ -59,3 +63,6 @@ class Main(threading.Thread):
 
 def main(config='harmopy.conf'):
     Main(config).run()
+
+if __name__ == '__main__':
+    main()
