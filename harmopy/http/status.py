@@ -1,9 +1,8 @@
 import datetime
 import logging
 
-from .. import config
 from .. import logs
-from .utils import json_exposed
+from . import utils
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +40,7 @@ class Page:
         self._config_changed()
         return res
 
-    @json_exposed
+    @utils.json_exposed
     def status(self):
         return dict(
             id='status',
@@ -49,7 +48,7 @@ class Page:
             **self._rsyncs.status
         )
 
-    @json_exposed
+    @utils.json_exposed
     def history(self, debug=False):
         if debug:
             return self._rsyncs.history
@@ -58,11 +57,11 @@ class Page:
             'time': h['time'],
         } for h in self._rsyncs.history]
 
-    @json_exposed
+    @utils.json_exposed
     def logs(self):
         return logs.get()
 
-    @json_exposed
+    @utils.json_exposed
     def config(self, **kwargs):
         if 'config_key' in kwargs:
             return self._config_save(kwargs)
@@ -77,14 +76,14 @@ class Page:
             } for k, v in section.items()],
         } for title, section in self._config.main_sections]
 
-    @json_exposed
+    @utils.json_exposed
     def files(self, **kwargs):
         if 'config_key' in kwargs:
             return self._config_save(kwargs)
         return [dict(section.items(), id=title, editable=self._config['status']['allow_conf_edit'])
             for title, section in self._config.files + [('DEFAULT', self._config['DEFAULT'])]]
 
-    @json_exposed
+    @utils.json_exposed
     def delete(self, file_id):
         logger.info('Deleting file section %r', file_id)
         self._config.remove_section(file_id)
@@ -94,7 +93,7 @@ class Page:
             'id': file_id,
         }
 
-    @json_exposed
+    @utils.json_exposed
     def expand(self, file_id):
         files = self._rsyncs.expand(file_id)
         conf = self._config[file_id]

@@ -4,7 +4,6 @@ import functools
 import json
 
 from .. import config
-from .utils import json_exposed
 
 
 class JSONEncoder(json.JSONEncoder):

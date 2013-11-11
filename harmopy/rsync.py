@@ -213,13 +213,13 @@ class RsyncManager(object):
             return {'running': False}
         return self.current.status
 
-    def expand(self, file_id):
+    def expand(self, file_id, path='/'):
         logger.info('Expanding %s', file_id)
         with self.working:
             self._stop()
             conf = self._config[file_id]
             try:
-                out = sh.rsync('--no-motd', conf['source']+'/').split('\n')
+                out = sh.rsync('--no-motd', conf['source'] + path).split('\n')
             except sh.ErrorReturnCode_23:
                 # Source is a file, not a dir
                 # This will be catched by cherrypy
