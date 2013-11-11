@@ -14,7 +14,7 @@ servers.wait_for_occupied_port = lambda h,p: None
 logger = logging.getLogger(__name__)
 
 class Thread(threading.Thread):
-    static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static')
+    static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     config = {
         '/': {'log.screen': False},
         '/static': {

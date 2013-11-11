@@ -1,5 +1,7 @@
+import cherrypy
 import datetime
 import logging
+import re
 
 from .. import logs
 from . import utils
@@ -47,6 +49,16 @@ class Page:
             time=datetime.datetime.now().timestamp(),
             **self._rsyncs.status
         )
+
+    @utils.json_exposed
+    def stop(self, td=''):
+        match = re.match(r'(?:(?P<hours>[0-9]+):)?(?P<minutes>[0-9]+)', td)
+        if not match:
+            raise cherrypy.HTTPError(400, 'Bad timedelta format (require "(?:[0-9]+:)?[0-9]+")')
+        data = {k: int(v) if v else 0 for k, v in match.groupdict().items()}
+        self._rsyncs.stop_until = datetime.datetime.now() + datetime.timedelta(**data)
+        logger.info('Stopping until %s', self._rsyncs.stop_until)
+        return {'status': 200}
 
     @utils.json_exposed
     def history(self, debug=False):

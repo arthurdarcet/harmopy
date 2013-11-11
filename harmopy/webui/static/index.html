@@ -41,7 +41,19 @@
                                     <p><i class="glyphicon glyphicon-transfer"></i><span class="">Not running</span></p>
                                     {{#if error}}<p><i class="glyphicon-warning-sign glyphicon"></i>{{error}}</p>{{/if}}
                                 {{/if}}
+                                {{#if stopped_until}}
+                                <p><i class="glyphicon glyphicon-ban-circle"></i>Stopped until: {{stopped_until}}</p>
+                                {{/if}}
                             </script>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <input type="button" class="btn btn-sm btn-default action-stop" value="Stop for:">
+                                </div>
+                                <div class="col-md-9">
+                                    <input type="text" class="input-sm form-control" pattern="([0-9]+:)?[0-9]+" name="td" placeholder="HH:MM">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

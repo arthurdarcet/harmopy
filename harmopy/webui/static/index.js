@@ -199,10 +199,17 @@ $(document).ready(function() {
     load('config');
     load('files');
 
-    $('.alert .close').click(function(){
+    $('.action-stop').click(function() {
+        $.post(
+            '/status/stop',
+            {td: $('input[name=td]').val()}
+        );
+    });
+
+    $('.alert .close').click(function() {
         $('.alert').fadeOut();
     });
-    $('#confirmed').click(function(){
+    $('#confirmed').click(function() {
         $('#modal').modal('hide');
         var action = $(this).data('action');
         $('#file-' + $(this).data('id') + ' .file-' + action).button('loading');
@@ -215,7 +222,7 @@ $(document).ready(function() {
         })
     });
     $('#modal').modal({show: false});
-    $('#modal').on('hide.bs.modal', function(){
+    $('#modal').on('hide.bs.modal', function() {
         $('.confirm').button('reset');
     });
 });

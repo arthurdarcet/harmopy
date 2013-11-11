@@ -152,6 +152,7 @@ class RsyncManager(object):
     def __init__(self, config):
         self.working = threading.Lock()
         self.current = None
+        self.stop_until = None
         self.init(config)
 
     def init(self, config):
@@ -215,8 +216,13 @@ class RsyncManager(object):
     @property
     def status(self):
         if self.current is None:
-            return {'running': False}
-        return self.current.status
+            status = {'running': False}
+        else:
+            status = self.current.status
+
+        if self.stop_until is not None:
+            status['stopped_until'] = str(self.stop_until)
+        return status
 
     def expand(self, file_id, path='/'):
         logger.info('Expanding %s', file_id)
@@ -239,6 +245,11 @@ class RsyncManager(object):
             (datetime.datetime.now() - self.start_time).total_seconds() >= self.max_runtime
 
     def _should_run(self):
+        if self.stop_until is not None:
+            if self.stop_until < datetime.datetime.now():
+                self.stop_until = None
+            else:
+                return False
         now = datetime.datetime.now()
         return self.should_run(now.weekday(), now.hour, now.minute)
 
