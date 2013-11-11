@@ -33,6 +33,12 @@ class Main(threading.Thread):
             help='Log INFO messages',
             default=False
         )
+        parser.add_argument(
+            '-s', '--stop',
+            action='store_true',
+            help='Block the rsyncs from starting (debug purposes)',
+            default=False
+        )
         config_arg = parser.add_argument(
             '-c', '--config',
             help='Config file',
@@ -49,6 +55,10 @@ class Main(threading.Thread):
         self.config = config.Config(self.args.config)
         self.rsyncs = rsync.RsyncManager(self.config)
         self.server = webui.Thread(self.config, self.rsyncs)
+
+        if self.args.stop:
+            import datetime
+            self.rsyncs.stop_until = datetime.datetime.now() + datetime.timedelta(days=100)
 
     def run(self):
         try:
