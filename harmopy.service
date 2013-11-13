@@ -2,7 +2,7 @@
 Description=A file synchronisation deamon controlled by a web interface
 
 [Service]
-ExecStart=/usr/bin/harmopy -ic /etc/harmopy.conf
+ExecStart=/usr/bin/harmopy -c /etc/harmopy.conf
 
 [Install]
 WantedBy=multi-user.target
