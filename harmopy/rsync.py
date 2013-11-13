@@ -75,6 +75,9 @@ class Rsync(threading.Thread):
 
         line = line.strip(' ')
 
+        if line == '':
+            return
+
         m1 = self.STATUS_LINE.match(line)
         if m1 is not None:
             return update_status(m1.groupdict())

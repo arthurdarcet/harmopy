@@ -25,15 +25,15 @@
                                     {{#if current_eta}}<p><i class="glyphicon-time glyphicon"></i>{{current_eta}}</p>{{/if}}
                                     {{#if current_done}}{{#if current_file}}
                                         <i class="glyphicon-file glyphicon pull-left"></i>
-                                        <div class="progress progress-info">
-                                            <div class="bar" style="width: {{current_done}}%;">
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-warning" style="width: {{current_done}}%;">
                                                 <small>{{current_file}}</small>
                                             </div>
                                         </div>
                                     {{/if}}{{/if}}
                                     <i class="glyphicon glyphicon-transfer pull-left"></i>
-                                    <div class="progress progress-info">
-                                        <div class="bar" style="width: {{done}}%;">
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-success" style="width: {{done}}%;">
                                             <small>Total</small>
                                         </div>
                                     </div>
