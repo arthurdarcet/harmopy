@@ -24,11 +24,13 @@ def config(debug, info):
             'console': {
                 'class': 'logging.StreamHandler',
                 'formatter': 'clean',
+                'level': logging.DEBUG if debug else logging.INFO if info else logging.WARNING,
             },
             'memory': {
                 '()': MemoryHandler,
                 'capacity': 100,
                 'formatter': 'short',
+                'level': logging.DEBUG if debug else logging.INFO,
             },
         },
         'formatters': {
@@ -43,14 +45,11 @@ def config(debug, info):
         },
         'loggers': {
             'harmopy': {
-                'level': logging.DEBUG if debug else logging.INFO if info else logging.WARNING,
                 'handlers': ['memory'],
+                'level': logging.DEBUG,
             },
             'cherrypy': {
                 'level': logging.INFO if info or debug else logging.WARNING,
-            },
-            'cherrypy.error': {
-                'level': logging.WARNING
             },
         },
         'root': {
