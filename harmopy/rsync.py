@@ -141,7 +141,10 @@ class Rsync(threading.Thread):
     def exit_code(self):
         if not self.running.is_set():
             return 0
-        return self._cmd.exit_code
+        try:
+            return self._cmd.exit_code
+        except sh.ErrorReturnCode as exc:
+            return getattr(exc, 'exit_code', None)
 
     def __str__(self):
         res = 'Rsync {} {} -> {}'.format(*self.args)
@@ -186,6 +189,8 @@ class RsyncManager(object):
             logger.info('Stopped transfer %s', self.current)
         if self.current.exit_code == -15:
             logger.info('Interrupted unfinished transfer %s', self.current)
+        if self.current.exit_code is None:
+            logger.info('Transfer %s failed with unknown exit code', self.current)
         elif self.current.exit_code > 0:
             logger.warn('Transfer %s failed with exit code %d', self.current, self.current.exit_code)
         self.start_time = None
