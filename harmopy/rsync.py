@@ -156,7 +156,7 @@ class Rsync(threading.Thread):
 
 
 class RsyncManager(object):
-    LISTING_LINE = re.compile(r'^(?P<directory>d|-)[rwx-]{9} +(?P<size>[0-9]+) [0-9/]+ [0-9:]+ (?P<file>.*)$')
+    LISTING_LINE = re.compile(r'^(?P<directory>d|-)[rwxstST-]{9} +(?P<size>[0-9]+) [0-9/]+ [0-9:]+ (?P<file>.*)$')
 
     def __init__(self, config):
         self.working = threading.Lock()
